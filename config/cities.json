@@ -1,0 +1,99 @@
+{
+    "_meta": {
+        "description": "City configuration mapping IMS location IDs to internal keys",
+        "source": "IMS XML cities forecast",
+        "last_updated": "2024-12-18"
+    },
+    "cities": {
+        "520": {
+            "id": "520",
+            "internal_key": "eilat",
+            "name_hebrew": "אילת",
+            "name_english": "Eilat"
+        },
+        "114": {
+            "id": "114",
+            "internal_key": "ashdod",
+            "name_hebrew": "אשדוד",
+            "name_english": "Ashdod"
+        },
+        "513": {
+            "id": "513",
+            "internal_key": "beer_sheva",
+            "name_hebrew": "באר שבע",
+            "name_english": "Beer Sheva"
+        },
+        "203": {
+            "id": "203",
+            "internal_key": "bet_shean",
+            "name_hebrew": "בית שאן",
+            "name_english": "Bet Shean"
+        },
+        "115": {
+            "id": "115",
+            "internal_key": "haifa",
+            "name_hebrew": "חיפה",
+            "name_english": "Haifa"
+        },
+        "202": {
+            "id": "202",
+            "internal_key": "tiberias",
+            "name_hebrew": "טבריה",
+            "name_english": "Tiberias"
+        },
+        "510": {
+            "id": "510",
+            "internal_key": "jerusalem",
+            "name_hebrew": "ירושלים",
+            "name_english": "Jerusalem"
+        },
+        "204": {
+            "id": "204",
+            "internal_key": "lod",
+            "name_hebrew": "לוד",
+            "name_english": "Lod"
+        },
+        "106": {
+            "id": "106",
+            "internal_key": "mizpe_ramon",
+            "name_hebrew": "מצפה רמון",
+            "name_english": "Mizpe Ramon"
+        },
+        "207": {
+            "id": "207",
+            "internal_key": "nazareth",
+            "name_hebrew": "נצרת",
+            "name_english": "Nazareth"
+        },
+        "105": {
+            "id": "105",
+            "internal_key": "ein_gedi",
+            "name_hebrew": "עין גדי",
+            "name_english": "En Gedi"
+        },
+        "209": {
+            "id": "209",
+            "internal_key": "afula",
+            "name_hebrew": "עפולה",
+            "name_english": "Afula"
+        },
+        "507": {
+            "id": "507",
+            "internal_key": "zefat",
+            "name_hebrew": "צפת",
+            "name_english": "Zefat"
+        },
+        "201": {
+            "id": "201",
+            "internal_key": "qazrin",
+            "name_hebrew": "קצרין",
+            "name_english": "Qazrin"
+        },
+        "402": {
+            "id": "402",
+            "internal_key": "tel_aviv",
+            "name_hebrew": "תל אביב - יפו",
+            "name_english": "Tel Aviv - Yafo"
+        }
+    }
+}

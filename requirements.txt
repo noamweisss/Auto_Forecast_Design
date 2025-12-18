@@ -1,0 +1,48 @@
+# Python Dependencies for IMS Weather Forecast Generator
+#
+# Install all dependencies with:
+#   pip install -r requirements.txt
+#
+# Or create a virtual environment first (recommended):
+#   python -m venv venv
+#   venv\Scripts\activate  (Windows)
+#   pip install -r requirements.txt
+
+# === Core Dependencies ===
+
+# HTTP requests for fetching XML data from IMS
+requests>=2.31.0
+
+# Image generation and manipulation
+Pillow>=10.0.0
+
+# XML parsing with proper encoding support
+lxml>=4.9.0
+
+# Environment variable management (for email credentials)
+python-dotenv>=1.0.0
+
+
+# === Hebrew Text Support ===
+
+# BiDi algorithm for right-to-left text rendering
+python-bidi>=0.4.2
+
+# Character reshaping for Hebrew/Arabic text
+arabic-reshaper>=3.0.0
+
+
+# === Hebrew Calendar (Optional) ===
+
+# Hebrew calendar date conversion
+# Uncomment when implementing Hebrew date display
+# hebrew-calendar>=1.0.0
+
+
+# === Testing (Development Only) ===
+
+# Test framework
+pytest>=7.4.0
+
+# Test coverage reporting
+pytest-cov>=4.1.0

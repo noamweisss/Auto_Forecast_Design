@@ -12,3 +12,29 @@ logs/
 # Ignore Internal Dev Docs
 docs/internal/
 
+# ===== New additions for project structure =====
+
+# Generated output files (images)
+output/
+
+# XML archive (backup data)
+archive/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage

@@ -1,0 +1,137 @@
+{
+    "_meta": {
+        "description": "Design tokens extracted from Figma for the IMS Weather Forecast Generator",
+        "figma_url": "https://www.figma.com/design/YVPUc24KCJIFrHpoXKrHz7/Story-Layout-V2.0",
+        "last_updated": "2024-12-18",
+        "status": "PLACEHOLDER - Values need to be extracted from Figma using Figma MCP",
+        "instructions": "An AI agent with Figma MCP access should update these values to match the actual design"
+    },
+    "canvas": {
+        "width": 1080,
+        "height": 1920,
+        "background_color": "#1A1A2E"
+    },
+    "colors": {
+        "_comment": "Update these with actual Figma color values",
+        "background": "#1A1A2E",
+        "text_primary": "#FFFFFF",
+        "text_secondary": "#8B8FA3",
+        "accent": "#4ECDC4",
+        "warning": "#FF6B6B",
+        "temperature_hot": "#FF8C42",
+        "temperature_cold": "#45B7D1"
+    },
+    "typography": {
+        "_comment": "Font sizes and styles from Figma",
+        "header_date_hebrew": {
+            "font_family": "NotoSansHebrew-Bold",
+            "font_size": 32,
+            "color": "#FFFFFF"
+        },
+        "header_date_georgian": {
+            "font_family": "NotoSansHebrew-Regular",
+            "font_size": 24,
+            "color": "#8B8FA3"
+        },
+        "city_name": {
+            "font_family": "NotoSansHebrew-SemiBold",
+            "font_size": 22,
+            "color": "#FFFFFF"
+        },
+        "temperature": {
+            "font_family": "NotoSansHebrew-Bold",
+            "font_size": 28,
+            "color": "#FFFFFF"
+        }
+    },
+    "spacing": {
+        "_comment": "Padding and margins in pixels",
+        "header_padding_top": 80,
+        "header_padding_horizontal": 40,
+        "map_margin_top": 160,
+        "footer_padding_bottom": 60,
+        "city_label_offset": 10
+    },
+    "city_positions": {
+        "_comment": "PLACEHOLDER - These coordinates need to be extracted from Figma. All positions are (x, y) from top-left of canvas.",
+        "eilat": {
+            "x": 520,
+            "y": 1650,
+            "label_anchor": "center"
+        },
+        "beer_sheva": {
+            "x": 480,
+            "y": 1350,
+            "label_anchor": "left"
+        },
+        "jerusalem": {
+            "x": 620,
+            "y": 1100,
+            "label_anchor": "right"
+        },
+        "tel_aviv": {
+            "x": 280,
+            "y": 950,
+            "label_anchor": "left"
+        },
+        "ashdod": {
+            "x": 280,
+            "y": 1080,
+            "label_anchor": "left"
+        },
+        "haifa": {
+            "x": 350,
+            "y": 580,
+            "label_anchor": "left"
+        },
+        "tiberias": {
+            "x": 700,
+            "y": 620,
+            "label_anchor": "right"
+        },
+        "zefat": {
+            "x": 650,
+            "y": 480,
+            "label_anchor": "right"
+        },
+        "nazareth": {
+            "x": 500,
+            "y": 560,
+            "label_anchor": "center"
+        },
+        "afula": {
+            "x": 550,
+            "y": 640,
+            "label_anchor": "center"
+        },
+        "lod": {
+            "x": 380,
+            "y": 1000,
+            "label_anchor": "left"
+        },
+        "bet_shean": {
+            "x": 720,
+            "y": 700,
+            "label_anchor": "right"
+        },
+        "ein_gedi": {
+            "x": 680,
+            "y": 1150,
+            "label_anchor": "right"
+        },
+        "mizpe_ramon": {
+            "x": 500,
+            "y": 1480,
+            "label_anchor": "center"
+        },
+        "qazrin": {
+            "x": 750,
+            "y": 540,
+            "label_anchor": "right"
+        }
+    },
+    "icon_sizes": {
+        "weather_main": 64,
+        "weather_city": 32
+    }
+}

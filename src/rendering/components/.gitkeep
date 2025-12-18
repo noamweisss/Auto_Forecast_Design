@@ -1,0 +1,9 @@
+# Rendering Components - Reusable Visual Elements
+# 
+# This folder will contain reusable visual components that can be
+# shared across multiple layouts. Think of them like Figma components.
+#
+# Future components might include:
+#   - city_card.py - A card showing city name, temp, and icon
+#   - date_display.py - Hebrew + Georgian date display
+#   - logo_strip.py - Footer with IMS and MOT logos
