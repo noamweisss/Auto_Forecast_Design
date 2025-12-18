@@ -8,6 +8,8 @@ This is an automated daily weather forecast image generator for the Israel Meteo
 
 **Developer Context:** The primary developer is a designer with web development background (HTML/CSS/JavaScript), not a professional programmer. Code must be clear, well-documented, and debuggable by someone learning to code.
 
+**Current Status:** Project structure and planning complete. Module scaffolding in place with placeholder implementations. Ready for incremental feature development.
+
 ## Data Sources
 
 ### IMS Weather Forecast XML Files
@@ -19,7 +21,7 @@ Both XML files contain Hebrew text - encoding handling is critical:
 
 ### Weather Code Reference
 
-Weather condition codes and their Hebrew/English translations are documented in `docs/00_ims_weather_codes.json`. This file includes:
+Weather condition codes and their Hebrew/English translations are documented in `config/00_ims_weather_codes.json`. This file includes:
 - Israel-specific forecast codes (23 codes)
 - Worldwide forecast codes (31 codes)
 - Wind direction mappings
@@ -32,12 +34,81 @@ The layout design is in Figma using Auto-layout Frames and Multi-State Component
 - **Approach:** Designer thinks in DOM/CSS terms - implementations should mirror this mental model
 - Use Figma MCP remote server (configured in VS Code) to accurately replicate designs
 
+### Design Tokens
+
+Design values extracted from Figma are stored in `config/design_tokens.json`:
+- Colors (backgrounds, text, accents)
+- Typography (font families, sizes, weights)
+- Spacing and positions
+- Component-specific styling
+
+## Tech Stack
+
+### Primary Language: Python 3.11+
+
+Python provides clear, readable code that's easy to understand and debug.
+
+### Core Dependencies
+
+```
+requests>=2.31.0        # HTTP requests for fetching XML data
+Pillow>=10.0.0          # Image generation and manipulation
+lxml>=4.9.0             # XML parsing with proper encoding support
+python-dotenv>=1.0.0    # Environment variable management
+python-bidi>=0.4.2      # BiDi algorithm for Hebrew text
+arabic-reshaper>=3.0.0  # Hebrew/Arabic character shaping
+pytest>=7.4.0           # Testing framework
+pytest-cov>=4.1.0       # Test coverage reporting
+```
+
+See `requirements.txt` for the complete list with detailed comments.
+
+## Project Structure
+
+The codebase follows a modular architecture. Each module has a single responsibility:
+
+```
+src/
+├── main.py                  # Entry point: python -m src.main
+├── data/                    # Data fetching & processing
+│   ├── fetcher.py           # Download XML from IMS
+│   ├── parser.py            # Convert XML to Python objects
+│   ├── models.py            # Data structures (CityForecast, etc.)
+│   └── archive.py           # XML backup system
+├── design/                  # Design system
+│   ├── tokens.py            # Load design_tokens.json
+│   └── icon_mapper.py       # Map weather codes to icons
+├── rendering/               # Image generation
+│   ├── base_renderer.py     # Abstract base class
+│   ├── instagram_story.py   # 1080×1920 layout
+│   └── text_utils.py        # Hebrew text rendering
+├── delivery/                # Output & distribution
+│   ├── file_saver.py        # Save images as JPEG/PNG
+│   └── email_sender.py      # Send via Gmail SMTP
+└── utils/                   # Shared helpers
+    ├── logger.py            # Logging setup
+    └── date_utils.py        # Hebrew calendar dates
+
+config/                      # Configuration files
+├── design_tokens.json       # Figma design values
+├── cities.json              # City ID → name mapping
+└── 00_ims_weather_codes.json # Weather code mappings
+
+tests/                       # Automated tests
+├── test_parser.py
+├── test_date_utils.py
+└── test_rendering.py
+```
+
+For complete structure documentation, see `docs/01_folder_structure.md`.
+
 ## Assets Structure
 
 All design assets are in `assets/`:
-- `Fonts/` - Typography assets
+- `Fonts/` - Typography assets (Noto Sans Hebrew - 9 weights)
 - `Logos/` - IMS branding
-- `Weather_Icons/` - Weather condition icons
+- `Weather_Icons/` - Weather condition icons (16 variations)
+- `Map/` - Israel map background
 
 ## Email Configuration
 
@@ -102,6 +173,53 @@ Follow standards from `docs/internal/git_and_documentation_best_practices.md`:
 - Document all design decisions
 - Explain Hebrew text handling approaches
 - Note any Figma-to-code translation decisions
+
+### Key Documentation Files
+
+- `docs/00_initial_plan.md` - Comprehensive project plan and architecture decisions
+- `docs/01_folder_structure.md` - Quick reference for navigating the codebase
+- `CLAUDE.md` - This file - AI assistant context and project overview
+
+## Running the Project
+
+### Installation
+
+```bash
+# Create virtual environment (recommended)
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Execution
+
+```bash
+# Run the main generator
+python -m src.main
+
+# Run tests
+python -m pytest tests/ -v
+
+# Run tests with coverage
+python -m pytest tests/ --cov=src --cov-report=html
+```
+
+### Output
+
+Generated images are saved to:
+- `output/forecast_YYYY-MM-DD.jpg` - JPEG version
+- `output/forecast_YYYY-MM-DD.png` - PNG version
+
+XML backups are stored in:
+- `archive/YYYY-MM-DD_cities.xml`
+- `archive/YYYY-MM-DD_country.xml`
 
 ## Important Constraints
 
