@@ -1,0 +1,412 @@
+{
+  "source": "Israel Meteorological Service (IMS) Official Documentation",
+  "document": "CodesForIMSWebSite_1.pdf",
+  "last_updated": "2025-11-03",
+  "description": "Complete weather code mapping for IMS forecasts",
+
+  "israel_forecast_codes": {
+    "1010": {
+      "code": "1010",
+      "hebrew": "סופות חול",
+      "english": "Sandstorms",
+      "category": "severe"
+    },
+    "1020": {
+      "code": "1020",
+      "hebrew": "סופת רעמים וברקים",
+      "english": "Thunderstorms",
+      "category": "severe"
+    },
+    "1060": {
+      "code": "1060",
+      "hebrew": "שלג",
+      "english": "Snow",
+      "category": "precipitation"
+    },
+    "1070": {
+      "code": "1070",
+      "hebrew": "שלג קל",
+      "english": "Light snow",
+      "category": "precipitation"
+    },
+    "1080": {
+      "code": "1080",
+      "hebrew": "גשם מעורב בשלג",
+      "english": "Sleet",
+      "category": "precipitation"
+    },
+    "1140": {
+      "code": "1140",
+      "hebrew": "גשם",
+      "english": "Rainy",
+      "category": "precipitation"
+    },
+    "1160": {
+      "code": "1160",
+      "hebrew": "ערפל",
+      "english": "Fog",
+      "category": "visibility"
+    },
+    "1220": {
+      "code": "1220",
+      "hebrew": "מעונן חלקית",
+      "english": "Partly cloudy",
+      "category": "clouds"
+    },
+    "1230": {
+      "code": "1230",
+      "hebrew": "מעונן",
+      "english": "Cloudy",
+      "category": "clouds"
+    },
+    "1250": {
+      "code": "1250",
+      "hebrew": "בהיר",
+      "english": "Clear",
+      "category": "clear"
+    },
+    "1260": {
+      "code": "1260",
+      "hebrew": "רוחות ערות",
+      "english": "Windy",
+      "category": "wind"
+    },
+    "1270": {
+      "code": "1270",
+      "hebrew": "הביל",
+      "english": "Muggy",
+      "category": "conditions"
+    },
+    "1300": {
+      "code": "1300",
+      "hebrew": "קרה",
+      "english": "Frost",
+      "category": "temperature"
+    },
+    "1310": {
+      "code": "1310",
+      "hebrew": "חם",
+      "english": "Hot",
+      "category": "temperature"
+    },
+    "1320": {
+      "code": "1320",
+      "hebrew": "קר",
+      "english": "Cold",
+      "category": "temperature"
+    },
+    "1510": {
+      "code": "1510",
+      "hebrew": "סוער",
+      "english": "Stormy",
+      "category": "severe"
+    },
+    "1520": {
+      "code": "1520",
+      "hebrew": "שלג כבד",
+      "english": "Heavy snow",
+      "category": "precipitation"
+    },
+    "1530": {
+      "code": "1530",
+      "hebrew": "מעונן חלקית, אפשרות לגשם",
+      "english": "Partly cloudy, possible rain",
+      "category": "clouds"
+    },
+    "1540": {
+      "code": "1540",
+      "hebrew": "מעונן, אפשרות לגשם",
+      "english": "Cloudy, possible rain",
+      "category": "clouds"
+    },
+    "1560": {
+      "code": "1560",
+      "hebrew": "מעונן, גשם קל",
+      "english": "Cloudy, light rain",
+      "category": "precipitation"
+    },
+    "1570": {
+      "code": "1570",
+      "hebrew": "אביך",
+      "english": "Dust",
+      "category": "visibility"
+    },
+    "1580": {
+      "code": "1580",
+      "hebrew": "חם מאד",
+      "english": "Extremely hot",
+      "category": "temperature"
+    },
+    "1590": {
+      "code": "1590",
+      "hebrew": "קר מאד",
+      "english": "Extremely cold",
+      "category": "temperature"
+    }
+  },
+
+  "worldwide_forecast_codes": {
+    "1010": {
+      "code": "1010",
+      "hebrew": "סופות חול, סופות אבק",
+      "english": "Sandstorm, Duststorm, Sand, Dust",
+      "category": "severe"
+    },
+    "1020": {
+      "code": "1020",
+      "hebrew": "סופת רעמים וברקים",
+      "english": "Thunderstorms, Thundershowers, Storm",
+      "category": "severe"
+    },
+    "1030": {
+      "code": "1030",
+      "hebrew": "ברד",
+      "english": "Hail",
+      "category": "precipitation"
+    },
+    "1040": {
+      "code": "1040",
+      "hebrew": "סופת שלג",
+      "english": "Blowing Snow, Blizzard, Snowdrift, Snowstorm",
+      "category": "severe"
+    },
+    "1050": {
+      "code": "1050",
+      "hebrew": "תזזיות שלג",
+      "english": "Snow Showers, Flurries",
+      "category": "precipitation"
+    },
+    "1060": {
+      "code": "1060",
+      "hebrew": "שלג, שלג כבד",
+      "english": "Snow, Heavy Snow, Snowfall",
+      "category": "precipitation"
+    },
+    "1070": {
+      "code": "1070",
+      "hebrew": "שלג קל",
+      "english": "Light Snow",
+      "category": "precipitation"
+    },
+    "1080": {
+      "code": "1080",
+      "hebrew": "גשם מעורב בשלג",
+      "english": "Sleet",
+      "category": "precipitation"
+    },
+    "1090": {
+      "code": "1090",
+      "hebrew": "ממטרים, ממטרים כבדים",
+      "english": "Showers, Heavy Showers",
+      "category": "precipitation"
+    },
+    "1100": {
+      "code": "1100",
+      "hebrew": "ממטרים פזורים, ממטרים לסרוגין",
+      "english": "Occasional Showers, Scattered Showers",
+      "category": "precipitation"
+    },
+    "1110": {
+      "code": "1110",
+      "hebrew": "ממטרים מקומיים",
+      "english": "Isolated Showers",
+      "category": "precipitation"
+    },
+    "1120": {
+      "code": "1120",
+      "hebrew": "ממטרים קלים",
+      "english": "Light Showers",
+      "category": "precipitation"
+    },
+    "1130": {
+      "code": "1130",
+      "hebrew": "גשם קופא",
+      "english": "Freezing Rain",
+      "category": "precipitation"
+    },
+    "1140": {
+      "code": "1140",
+      "hebrew": "גשם",
+      "english": "Rain",
+      "category": "precipitation"
+    },
+    "1150": {
+      "code": "1150",
+      "hebrew": "רסס",
+      "english": "Drizzle, Light Rain",
+      "category": "precipitation"
+    },
+    "1160": {
+      "code": "1160",
+      "hebrew": "ערפל",
+      "english": "Fog",
+      "category": "visibility"
+    },
+    "1170": {
+      "code": "1170",
+      "hebrew": "ערפל קל",
+      "english": "Mist",
+      "category": "visibility"
+    },
+    "1180": {
+      "code": "1180",
+      "hebrew": "עשן",
+      "english": "Smoke",
+      "category": "visibility"
+    },
+    "1190": {
+      "code": "1190",
+      "hebrew": "אובך",
+      "english": "Haze",
+      "category": "visibility"
+    },
+    "1200": {
+      "code": "1200",
+      "hebrew": "כיסוי מלא בעננים",
+      "english": "Overcast",
+      "category": "clouds"
+    },
+    "1210": {
+      "code": "1210",
+      "hebrew": "בדרך כלל מעונן",
+      "english": "Sunny Interval, No Rain, Clearing",
+      "category": "clouds"
+    },
+    "1220": {
+      "code": "1220",
+      "hebrew": "מעונן חלקית",
+      "english": "Sunny Period, Partly Cloudy, Partly Bright, Mild",
+      "category": "clouds"
+    },
+    "1230": {
+      "code": "1230",
+      "hebrew": "מעונן",
+      "english": "Cloudy, Mostly Cloudy",
+      "category": "clouds"
+    },
+    "1240": {
+      "code": "1240",
+      "hebrew": "נאה",
+      "english": "Bright, Sunny, Fair",
+      "category": "clear"
+    },
+    "1250": {
+      "code": "1250",
+      "hebrew": "בהיר, צח",
+      "english": "Clear, Fine",
+      "category": "clear"
+    },
+    "1260": {
+      "code": "1260",
+      "hebrew": "רוחות ערות, רוחות סערה",
+      "english": "Windy, Squall, Stormy, Gale",
+      "category": "wind"
+    },
+    "1270": {
+      "code": "1270",
+      "hebrew": "הביל",
+      "english": "Wet, Humid, Muggy",
+      "category": "conditions"
+    },
+    "1280": {
+      "code": "1280",
+      "hebrew": "יבש",
+      "english": "Dry",
+      "category": "conditions"
+    },
+    "1290": {
+      "code": "1290",
+      "hebrew": "קפיאה",
+      "english": "Freezing",
+      "category": "temperature"
+    },
+    "1300": {
+      "code": "1300",
+      "hebrew": "קרה",
+      "english": "Frost",
+      "category": "temperature"
+    },
+    "1310": {
+      "code": "1310",
+      "hebrew": "חם מאד",
+      "english": "Hot",
+      "category": "temperature"
+    },
+    "1320": {
+      "code": "1320",
+      "hebrew": "קר",
+      "english": "Cold",
+      "category": "temperature"
+    },
+    "1330": {
+      "code": "1330",
+      "hebrew": "התחממות",
+      "english": "Warming",
+      "category": "temperature"
+    },
+    "1340": {
+      "code": "1340",
+      "hebrew": "התקררות",
+      "english": "Cooling",
+      "category": "temperature"
+    }
+  },
+
+  "wind_directions": {
+    "045": {
+      "numeric": "045",
+      "hebrew": "צפון מזרחית",
+      "english": "North Easterly"
+    },
+    "090": {
+      "numeric": "090",
+      "hebrew": "מזרחית",
+      "english": "Easterly"
+    },
+    "135": {
+      "numeric": "135",
+      "hebrew": "דרום מזרחית",
+      "english": "South Easterly"
+    },
+    "180": {
+      "numeric": "180",
+      "hebrew": "דרומית",
+      "english": "Southerly"
+    },
+    "225": {
+      "numeric": "225",
+      "hebrew": "דרום מערבית",
+      "english": "South Westerly"
+    },
+    "270": {
+      "numeric": "270",
+      "hebrew": "מערבית",
+      "english": "Westerly"
+    },
+    "315": {
+      "numeric": "315",
+      "hebrew": "צפון מערבית",
+      "english": "North Westerly"
+    },
+    "360": {
+      "numeric": "360",
+      "hebrew": "צפונית",
+      "english": "Northerly"
+    }
+  },
+
+  "notes": {
+    "israel_codes": "Weather codes specific to Israel forecasts (23 codes total)",
+    "worldwide_codes": "Extended weather codes for worldwide forecasts (31 codes total)",
+    "categories": [
+      "severe - Severe weather conditions",
+      "precipitation - Rain, snow, sleet, etc.",
+      "clouds - Cloud coverage conditions",
+      "clear - Clear/sunny conditions",
+      "visibility - Fog, dust, smoke, haze",
+      "wind - Wind conditions",
+      "temperature - Hot, cold, extreme temperatures",
+      "conditions - Humidity, dry/wet conditions"
+    ]
+  }
+}

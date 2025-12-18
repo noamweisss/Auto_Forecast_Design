@@ -1,0 +1,14 @@
+
+# Ignore the logs directory and all its contents
+logs/
+
+# Ignore AI agent directories
+.gemini/
+.claude/
+
+# Ignore environment variable files
+.env    
+
+# Ignore Internal Dev Docs
+docs/internal/
+
