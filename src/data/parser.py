@@ -145,6 +145,33 @@ def _get_internal_key(city_id: str) -> str:
     return city_id.lower()
 
 
+def _get_city_names(city_id: str, xml_name_eng: str, xml_name_heb: str) -> Tuple[str, str]:
+    """
+    Get standardized city names from config, falling back to XML values.
+    
+    This ensures consistent spelling (e.g., "Eilat" not "Elat").
+    
+    Args:
+        city_id: IMS location ID
+        xml_name_eng: English name from XML (fallback)
+        xml_name_heb: Hebrew name from XML (fallback)
+    
+    Returns:
+        Tuple of (english_name, hebrew_name)
+    """
+    cities_config = _load_cities_config()
+    
+    if city_id in cities_config:
+        config = cities_config[city_id]
+        name_eng = config.get("name_english", xml_name_eng)
+        name_heb = config.get("name_hebrew", xml_name_heb)
+        return (name_eng, name_heb)
+    
+    # City not in config, use XML values
+    return (xml_name_eng, xml_name_heb)
+
+
+
 def _extract_element_value(elements: List, name: str) -> Optional[str]:
     """
     Find an Element with matching ElementName and return its ElementValue.
@@ -375,8 +402,11 @@ def _parse_single_city(
     
     city_name_heb_elem = metadata.find("LocationNameHeb")
     city_name_eng_elem = metadata.find("LocationNameEng")
-    city_name_hebrew = city_name_heb_elem.text if city_name_heb_elem is not None else ""
-    city_name_english = city_name_eng_elem.text if city_name_eng_elem is not None else ""
+    xml_name_hebrew = city_name_heb_elem.text if city_name_heb_elem is not None else ""
+    xml_name_english = city_name_eng_elem.text if city_name_eng_elem is not None else ""
+    
+    # Get standardized names from config (fixes spelling inconsistencies like Elat→Eilat)
+    city_name_english, city_name_hebrew = _get_city_names(city_id, xml_name_english, xml_name_hebrew)
     
     # Get internal key for design tokens mapping
     internal_key = _get_internal_key(city_id)
