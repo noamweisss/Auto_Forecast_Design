@@ -791,7 +791,7 @@ python -m pytest tests/ --cov=src --cov-report=html
 - [x] Set up basic logging (`src/utils/logger.py`)
 - [x] Create placeholder `design_tokens.json` (to be filled by Figma MCP agent)
 - [x] Update `.gitignore` with new folders
-- [ ] Create `README.md` with quick start instructions
+- [X] Create `README.md` with quick start instructions
 
 ### Phase 2: Data Pipeline ⏱️ ~3 hours
 
