@@ -178,6 +178,7 @@ Follow standards from `docs/internal/git_and_documentation_best_practices.md`:
 
 - `docs/00_initial_plan.md` - Comprehensive project plan and architecture decisions
 - `docs/01_folder_structure.md` - Quick reference for navigating the codebase
+- `docs/internal/99_journal.md` - User's personal experinces with the project, external context and free language desires, needs and expectations 
 - `CLAUDE.md` - This file - AI assistant context and project overview
 
 ## Running the Project

@@ -15,6 +15,7 @@ The project structure, planning documents, and dependency lists are in place. Th
 ## Key Documentation
 
 *   **`docs/00_initial_plan.md`**: The comprehensive project plan. **Read this first** to understand the architecture, data flow, and specific goals.
+*   - `docs/internal/99_journal.md` - User's personal experinces with the project, external context and free language desires, needs and expectations 
 *   **`CLAUDE.md`**: Contains critical instructions regarding design philosophy ("Clarity over cleverness"), Hebrew text handling, and the "Design-first" approach mirroring Figma.
 *   **`config/design_tokens.json`**: The single source of truth for design values (colors, fonts, positions), extracted from Figma.
 

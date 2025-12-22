@@ -1,137 +1,185 @@
 {
     "_meta": {
         "description": "Design tokens extracted from Figma for the IMS Weather Forecast Generator",
-        "figma_url": "https://www.figma.com/design/YVPUc24KCJIFrHpoXKrHz7/Story-Layout-V2.0",
-        "last_updated": "2024-12-18",
-        "status": "PLACEHOLDER - Values need to be extracted from Figma using Figma MCP",
-        "instructions": "An AI agent with Figma MCP access should update these values to match the actual design"
+        "figma_url": "https://www.figma.com/design/YVPUc24KCJIFrHpoXKrHz7/Story-Layout-V2.0?node-id=1-2",
+        "last_updated": "2025-12-22",
+        "status": "VALIDATED - Extracted from Figma using Figma MCP",
+        "extraction_method": "Figma MCP Desktop (http://127.0.0.1:3845/mcp)"
     },
     "canvas": {
         "width": 1080,
         "height": 1920,
-        "background_color": "#1A1A2E"
+        "background": {
+            "type": "gradient",
+            "gradient_type": "linear",
+            "angle": -23.2359,
+            "stops": [
+                {"color": "#DCFF57", "position": 62.599},
+                {"color": "#22B2FF", "position": 112.14}
+            ]
+        }
     },
     "colors": {
-        "_comment": "Update these with actual Figma color values",
-        "background": "#1A1A2E",
         "text_primary": "#FFFFFF",
-        "text_secondary": "#8B8FA3",
-        "accent": "#4ECDC4",
-        "warning": "#FF6B6B",
-        "temperature_hot": "#FF8C42",
-        "temperature_cold": "#45B7D1"
+        "text_secondary": "#000000",
+        "gradient_start": "#DCFF57",
+        "gradient_end": "#22B2FF",
+        "header_separator": "#FFFFFF"
     },
     "typography": {
-        "_comment": "Font sizes and styles from Figma",
-        "header_date_hebrew": {
-            "font_family": "NotoSansHebrew-Bold",
-            "font_size": 32,
+        "header_date": {
+            "font_family": "NotoSansHebrew-Black",
+            "font_size": 36,
+            "font_weight": 900,
+            "line_height": 28,
             "color": "#FFFFFF"
-        },
-        "header_date_georgian": {
-            "font_family": "NotoSansHebrew-Regular",
-            "font_size": 24,
-            "color": "#8B8FA3"
         },
         "city_name": {
-            "font_family": "NotoSansHebrew-SemiBold",
-            "font_size": 22,
-            "color": "#FFFFFF"
+            "font_family": "NotoSansHebrew-Black",
+            "font_size": 24,
+            "font_weight": 900,
+            "line_height": 24,
+            "color": "#000000"
         },
         "temperature": {
-            "font_family": "NotoSansHebrew-Bold",
-            "font_size": 28,
-            "color": "#FFFFFF"
+            "font_family": "NotoSansHebrew-SemiBold",
+            "font_size": 20,
+            "font_weight": 600,
+            "line_height": 20,
+            "color": "#000000"
+        },
+        "description": {
+            "font_family": "NotoSansHebrew-SemiBold",
+            "font_size": 24,
+            "font_weight": 600,
+            "line_height": 36,
+            "color": "#000000"
+        },
+        "ims_logo_text": {
+            "font_family": "NotoSansHebrew-ExtraCondensed",
+            "font_size": 18,
+            "font_weight": 400,
+            "line_height": 18,
+            "color": "#000000"
         }
     },
     "spacing": {
-        "_comment": "Padding and margins in pixels",
-        "header_padding_top": 80,
-        "header_padding_horizontal": 40,
-        "map_margin_top": 160,
-        "footer_padding_bottom": 60,
-        "city_label_offset": 10
+        "header": {
+            "padding_top": 57,
+            "padding_bottom": 18,
+            "padding_horizontal": 100,
+            "gap": 40,
+            "separator_height": 7
+        },
+        "forecast_data_container": {
+            "left": 128,
+            "top": 248,
+            "width": 847,
+            "height": 1582
+        },
+        "city_component": {
+            "gap": 16,
+            "padding": 10,
+            "border_radius": 18
+        },
+        "israel_map": {
+            "left": 258,
+            "top": 288.3,
+            "width": 533.371,
+            "height": 1495.196
+        },
+        "logos": {
+            "left": 633,
+            "top": 1709,
+            "gap": 24
+        }
     },
     "city_positions": {
-        "_comment": "PLACEHOLDER - These coordinates need to be extracted from Figma. All positions are (x, y) from top-left of canvas.",
-        "eilat": {
-            "x": 520,
-            "y": 1650,
-            "label_anchor": "center"
-        },
-        "beer_sheva": {
-            "x": 480,
-            "y": 1350,
-            "label_anchor": "left"
-        },
-        "jerusalem": {
-            "x": 620,
-            "y": 1100,
-            "label_anchor": "right"
-        },
-        "tel_aviv": {
-            "x": 280,
-            "y": 950,
-            "label_anchor": "left"
-        },
-        "ashdod": {
-            "x": 280,
-            "y": 1080,
-            "label_anchor": "left"
-        },
-        "haifa": {
-            "x": 350,
-            "y": 580,
-            "label_anchor": "left"
-        },
-        "tiberias": {
-            "x": 700,
-            "y": 620,
-            "label_anchor": "right"
-        },
+        "_comment": "Coordinates extracted from Figma. Positions are (x, y) from top-left of canvas. Layout types: RTL (right-to-left), TTB (top-to-bottom), LTR (left-to-right)",
         "zefat": {
-            "x": 650,
-            "y": 480,
-            "label_anchor": "right"
+            "x": 463,
+            "y": 267,
+            "layout": "RTL"
         },
         "nazareth": {
-            "x": 500,
-            "y": 560,
-            "label_anchor": "center"
-        },
-        "afula": {
-            "x": 550,
-            "y": 640,
-            "label_anchor": "center"
-        },
-        "lod": {
-            "x": 380,
-            "y": 1000,
-            "label_anchor": "left"
-        },
-        "bet_shean": {
-            "x": 720,
-            "y": 700,
-            "label_anchor": "right"
-        },
-        "ein_gedi": {
-            "x": 680,
-            "y": 1150,
-            "label_anchor": "right"
-        },
-        "mizpe_ramon": {
-            "x": 500,
-            "y": 1480,
-            "label_anchor": "center"
+            "x": 552,
+            "y": 428,
+            "layout": "RTL"
         },
         "qazrin": {
-            "x": 750,
-            "y": 540,
-            "label_anchor": "right"
+            "x": 809,
+            "y": 418,
+            "layout": "TTB"
+        },
+        "tiberias": {
+            "x": 716,
+            "y": 579,
+            "layout": "RTL"
+        },
+        "haifa": {
+            "x": 287,
+            "y": 472,
+            "layout": "RTL"
+        },
+        "afula": {
+            "x": 552,
+            "y": 537,
+            "layout": "TTB"
+        },
+        "tel_aviv": {
+            "x": 227,
+            "y": 669,
+            "layout": "RTL"
+        },
+        "lod": {
+            "x": 465,
+            "y": 705,
+            "layout": "TTB"
+        },
+        "bet_shean": {
+            "x": 702,
+            "y": 738,
+            "layout": "TTB"
+        },
+        "ashdod": {
+            "x": 203,
+            "y": 815,
+            "layout": "RTL"
+        },
+        "jerusalem": {
+            "x": 456,
+            "y": 871,
+            "layout": "RTL"
+        },
+        "ein_gedi": {
+            "x": 699,
+            "y": 950,
+            "layout": "LTR"
+        },
+        "beer_sheva": {
+            "x": 428,
+            "y": 986,
+            "layout": "TTB"
+        },
+        "mizpe_ramon": {
+            "x": 393,
+            "y": 1229,
+            "layout": "TTB"
+        },
+        "eilat": {
+            "x": 443,
+            "y": 1508,
+            "layout": "TTB"
         }
     },
     "icon_sizes": {
-        "weather_main": 64,
-        "weather_city": 32
+        "weather_icon": 50
+    },
+    "description_text": {
+        "_comment": "Position and dimensions of the weather description text block",
+        "left": 851,
+        "top": 986,
+        "width": 239,
+        "transform": "translate-x-[-100%]"
     }
 }
