@@ -5,6 +5,8 @@ logs/
 # Ignore AI agent directories
 .gemini/
 .claude/
+GEMINI.md
+CLAUDE.md
 
 # Ignore environment variable files
 .env    
