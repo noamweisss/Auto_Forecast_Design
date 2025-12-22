@@ -38,3 +38,6 @@ env/
 # Coverage reports
 htmlcov/
 .coverage
+
+
+Auto_Forecast_Design.code-workspace
