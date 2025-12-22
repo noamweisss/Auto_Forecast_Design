@@ -21,12 +21,22 @@ Usage:
     print(paths["png"])   # "output/forecast_2024-12-18.png"
 """
 
+from datetime import date, timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
+
 from PIL import Image
+
+from src.utils.logger import get_logger
+
+# Initialize logger for this module
+logger = get_logger(__name__)
 
 # Output directory
 OUTPUT_DIR = Path("output")
+
+# Default cleanup age
+DEFAULT_MAX_AGE_DAYS = 30
 
 
 def save_forecast_image(image: Image.Image, date_str: str) -> Dict[str, str]:
@@ -61,6 +71,7 @@ def save_forecast_image(image: Image.Image, date_str: str) -> Dict[str, str]:
         optimize=True    # Optimize Huffman tables for smaller size
     )
     paths["jpeg"] = str(jpeg_path)
+    logger.info(f"Saved JPEG: {jpeg_path}")
     
     # === Save as PNG ===
     # PNG supports transparency and is lossless
@@ -71,8 +82,53 @@ def save_forecast_image(image: Image.Image, date_str: str) -> Dict[str, str]:
         optimize=True    # Compress without losing quality
     )
     paths["png"] = str(png_path)
+    logger.info(f"Saved PNG: {png_path}")
     
     return paths
+
+
+def cleanup_old_outputs(max_age_days: int = DEFAULT_MAX_AGE_DAYS) -> int:
+    """
+    Remove output files older than max_age_days.
+    
+    Keeps the output folder from growing indefinitely.
+    
+    Args:
+        max_age_days: Delete files older than this many days (default: 30)
+    
+    Returns:
+        Number of files deleted
+    """
+    if not OUTPUT_DIR.exists():
+        return 0
+    
+    today = date.today()
+    cutoff_date = today - timedelta(days=max_age_days)
+    deleted_count = 0
+    
+    # Find and delete old forecast files
+    for file_path in OUTPUT_DIR.glob("forecast_*.*"):
+        try:
+            # Parse date from filename (format: forecast_YYYY-MM-DD.ext)
+            filename = file_path.stem  # e.g., "forecast_2024-12-18"
+            date_str = filename.replace("forecast_", "")  # e.g., "2024-12-18"
+            file_date = date.fromisoformat(date_str)
+            
+            # Delete if older than cutoff
+            if file_date < cutoff_date:
+                file_path.unlink()
+                deleted_count += 1
+                logger.debug(f"Deleted old output: {file_path}")
+                
+        except (ValueError, IndexError) as e:
+            # Skip files that don't match expected naming pattern
+            logger.warning(f"Skipping file with unexpected name: {file_path}")
+            continue
+    
+    if deleted_count > 0:
+        logger.info(f"Cleaned up {deleted_count} old output files")
+    
+    return deleted_count
 
 
 def get_latest_output() -> Dict[str, Path]:
@@ -96,3 +152,62 @@ def get_latest_output() -> Dict[str, Path]:
         result["png"] = png_files[0]
     
     return result
+
+
+def get_output_path(date_str: str, format: str = "jpeg") -> Path:
+    """
+    Get the expected output path for a given date and format.
+    
+    Args:
+        date_str: Date string (e.g., "2024-12-18")
+        format: Either "jpeg" or "png"
+    
+    Returns:
+        Path object for the output file
+    """
+    extension = "jpg" if format == "jpeg" else "png"
+    return OUTPUT_DIR / f"forecast_{date_str}.{extension}"
+
+
+def list_outputs(format: Optional[str] = None) -> list[Path]:
+    """
+    List all output files, optionally filtered by format.
+    
+    Args:
+        format: Optional filter - "jpeg", "png", or None for all
+    
+    Returns:
+        List of Path objects for matching output files
+    """
+    if not OUTPUT_DIR.exists():
+        return []
+    
+    if format == "jpeg":
+        pattern = "forecast_*.jpg"
+    elif format == "png":
+        pattern = "forecast_*.png"
+    else:
+        pattern = "forecast_*.*"
+    
+    return sorted(OUTPUT_DIR.glob(pattern), reverse=True)  # Newest first
+
+
+# Allow running this module directly for quick testing
+if __name__ == "__main__":
+    print("Testing file saver...")
+    print("-" * 50)
+    
+    # List existing outputs
+    outputs = list_outputs()
+    print(f"Found {len(outputs)} output files:")
+    for output in outputs[:5]:  # Show first 5
+        print(f"  - {output}")
+    
+    # Get latest
+    latest = get_latest_output()
+    if latest:
+        print(f"\nLatest outputs:")
+        for fmt, path in latest.items():
+            print(f"  {fmt}: {path}")
+    else:
+        print("\nNo outputs found")

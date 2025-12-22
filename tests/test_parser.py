@@ -1,105 +1,269 @@
 """
-Test Parser - Verify XML Parsing Works Correctly
+Tests for XML Parser Module
 
-These tests ensure that we correctly extract data from IMS XML feeds.
-If someone changes the parser and breaks something, these tests will fail.
-
-Test Strategy:
-    - Use sample XML files from docs/internal/reference/
-    - Test each parsing function independently
-    - Verify Hebrew text is preserved correctly
+Tests the XML parsing functionality including:
+- Country forecast parsing
+- City forecast parsing
+- Weather code lookup
+- Fallback behavior for missing/invalid data
 """
 
 import pytest
 from datetime import date
+from pathlib import Path
 
-# These imports will work once the modules are implemented
-# from src.data.parser import parse_country_forecast, parse_cities_forecast
-# from src.data.models import CityForecast, CountryForecast
+from src.data.parser import (
+    parse_country_forecast,
+    parse_cities_forecast,
+    parse_daily_forecast,
+    _get_weather_description,
+    _extract_element_value,
+    _parse_wind_data,
+    _get_internal_key
+)
+from src.data.models import CityForecast, CountryForecast, DailyForecast
 
 
-class TestCountryForecastParser:
-    """Tests for parsing country-wide forecast XML."""
+# Sample XML for testing (simplified)
+SAMPLE_COUNTRY_XML = '''<?xml version="1.0" encoding="UTF-8"?>
+<IsraelWeatherForecastMorning>
+    <Location>
+        <LocationMetaData>
+            <LocationId>230</LocationId>
+            <LocationNameHeb>ישראל</LocationNameHeb>
+        </LocationMetaData>
+        <LocationData>
+            <TimeUnitData>
+                <Date>2025-12-22</Date>
+                <Element>
+                    <ElementName>Weather in Hebrew</ElementName>
+                    <ElementValue>מעונן חלקית עד בהיר</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Weather in English</ElementName>
+                    <ElementValue>Partly cloudy to clear</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Warning in Hebrew</ElementName>
+                    <ElementValue>אין התראות</ElementValue>
+                </Element>
+            </TimeUnitData>
+        </LocationData>
+    </Location>
+</IsraelWeatherForecastMorning>
+'''
+
+SAMPLE_CITIES_XML = '''<?xml version="1.0" encoding="UTF-8"?>
+<IsraelCitiesWeatherForecastMorning>
+    <Location>
+        <LocationMetaData>
+            <LocationId>510</LocationId>
+            <LocationNameEng>Jerusalem</LocationNameEng>
+            <LocationNameHeb>ירושלים</LocationNameHeb>
+        </LocationMetaData>
+        <LocationData>
+            <TimeUnitData>
+                <Date>2025-12-22</Date>
+                <Element>
+                    <ElementName>Maximum temperature</ElementName>
+                    <ElementValue>15</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Minimum temperature</ElementName>
+                    <ElementValue>8</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Weather code</ElementName>
+                    <ElementValue>1250</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Wind direction and speed</ElementName>
+                    <ElementValue>315-45/10-20</ElementValue>
+                </Element>
+            </TimeUnitData>
+        </LocationData>
+    </Location>
+    <Location>
+        <LocationMetaData>
+            <LocationId>402</LocationId>
+            <LocationNameEng>Tel Aviv - Yafo</LocationNameEng>
+            <LocationNameHeb>תל אביב - יפו</LocationNameHeb>
+        </LocationMetaData>
+        <LocationData>
+            <TimeUnitData>
+                <Date>2025-12-22</Date>
+                <Element>
+                    <ElementName>Maximum temperature</ElementName>
+                    <ElementValue>18</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Minimum temperature</ElementName>
+                    <ElementValue>12</ElementValue>
+                </Element>
+                <Element>
+                    <ElementName>Weather code</ElementName>
+                    <ElementValue>1220</ElementValue>
+                </Element>
+            </TimeUnitData>
+        </LocationData>
+    </Location>
+</IsraelCitiesWeatherForecastMorning>
+'''
+
+
+class TestParseCountryForecast:
+    """Tests for country forecast parsing."""
     
-    def test_parse_country_forecast_extracts_hebrew_description(self):
-        """
-        Verify that Hebrew weather description is extracted correctly.
+    def test_parse_hebrew_description(self):
+        """Test that Hebrew description is extracted correctly."""
+        result = parse_country_forecast(SAMPLE_COUNTRY_XML, date(2025, 12, 22))
         
-        The XML contains:
-            <ElementName>Weather in Hebrew</ElementName>
-            <ElementValue>מעונן חלקית...</ElementValue>
-        
-        We should get the full Hebrew text.
-        """
-        # TODO: Implement when parser is ready
-        pass
+        assert result.description_hebrew == "מעונן חלקית עד בהיר"
     
-    def test_parse_country_forecast_extracts_date(self):
-        """
-        Verify that the forecast date is parsed correctly.
+    def test_parse_english_description(self):
+        """Test that English description is extracted correctly."""
+        result = parse_country_forecast(SAMPLE_COUNTRY_XML, date(2025, 12, 22))
         
-        The XML contains:
-            <Date>2024-12-18</Date>
+        assert result.description_english == "Partly cloudy to clear"
+    
+    def test_parse_date(self):
+        """Test that forecast date is set correctly."""
+        result = parse_country_forecast(SAMPLE_COUNTRY_XML, date(2025, 12, 22))
         
-        We should get a Python date object.
-        """
-        # TODO: Implement when parser is ready
-        pass
+        assert result.forecast_date == date(2025, 12, 22)
+    
+    def test_parse_warning(self):
+        """Test that warning is extracted."""
+        result = parse_country_forecast(SAMPLE_COUNTRY_XML, date(2025, 12, 22))
+        
+        assert result.warning_hebrew == "אין התראות"
+    
+    def test_raises_for_invalid_date(self):
+        """Test that ValueError is raised for date not in XML."""
+        with pytest.raises(ValueError, match="No forecast data found"):
+            parse_country_forecast(SAMPLE_COUNTRY_XML, date(2024, 1, 1))
+    
+    def test_raises_for_invalid_xml(self):
+        """Test that ValueError is raised for invalid XML."""
+        with pytest.raises(ValueError, match="Invalid XML"):
+            parse_country_forecast("not valid xml", date(2025, 12, 22))
 
 
-class TestCitiesForecastParser:
-    """Tests for parsing per-city forecast XML."""
+class TestParseCitiesForecast:
+    """Tests for city forecast parsing."""
     
-    def test_parse_cities_returns_15_cities(self):
-        """
-        Verify that we extract all 15 cities from the XML.
+    def test_parse_multiple_cities(self):
+        """Test that all cities are parsed."""
+        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
         
-        The IMS cities XML contains exactly 15 locations.
-        """
-        # TODO: Implement when parser is ready
-        pass
+        assert len(result) == 2
     
-    def test_parse_city_temperature_values(self):
-        """
-        Verify that min/max temperatures are extracted as integers.
+    def test_parse_city_temperature(self):
+        """Test temperature extraction."""
+        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
         
-        The XML contains:
-            <ElementName>Maximum temperature</ElementName>
-            <ElementValue>18</ElementValue>
+        # Find Jerusalem
+        jerusalem = next(c for c in result if c.city_id == "510")
         
-        We should get an integer 18, not a string "18".
-        """
-        # TODO: Implement when parser is ready
-        pass
+        assert jerusalem.min_temp == 8
+        assert jerusalem.max_temp == 15
     
     def test_parse_city_weather_code(self):
-        """
-        Verify that weather codes are extracted correctly.
+        """Test weather code extraction."""
+        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
         
-        Weather codes are 4-digit strings like "1250" (Clear).
-        """
-        # TODO: Implement when parser is ready
-        pass
+        jerusalem = next(c for c in result if c.city_id == "510")
+        
+        assert jerusalem.weather_code == "1250"
+    
+    def test_parse_city_names(self):
+        """Test city name extraction in both languages."""
+        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        
+        jerusalem = next(c for c in result if c.city_id == "510")
+        
+        assert jerusalem.city_name_english == "Jerusalem"
+        assert jerusalem.city_name_hebrew == "ירושלים"
+    
+    def test_internal_key_assigned(self):
+        """Test that internal_key is assigned from config."""
+        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        
+        jerusalem = next(c for c in result if c.city_id == "510")
+        
+        # Should get key from cities.json if configured
+        assert jerusalem.internal_key is not None
 
 
-class TestWeatherCodeMapping:
-    """Tests for weather code to description mapping."""
+class TestWeatherCodeLookup:
+    """Tests for weather code translation."""
     
-    def test_code_1250_is_clear(self):
-        """
-        Verify that code 1250 maps to "בהיר" / "Clear".
+    def test_known_code_returns_description(self):
+        """Test that known code returns correct description."""
+        hebrew, english = _get_weather_description("1250")
         
-        This is one of the most common weather codes.
-        """
-        # from src.design.icon_mapper import get_weather_description
-        # hebrew, english = get_weather_description("1250")
-        # assert hebrew == "בהיר"
-        # assert english == "Clear"
-        pass
+        assert hebrew == "בהיר"
+        assert english == "Clear"
     
-    def test_unknown_code_returns_none(self):
-        """
-        Verify that unknown weather codes are handled gracefully.
-        """
-        # TODO: Implement when mapper is ready
-        pass
+    def test_unknown_code_returns_unknown(self):
+        """Test that unknown code returns 'Unknown'."""
+        hebrew, english = _get_weather_description("9999")
+        
+        assert hebrew == "לא ידוע"
+        assert english == "Unknown"
+
+
+class TestWindDataParsing:
+    """Tests for wind data parsing."""
+    
+    def test_parse_valid_wind_data(self):
+        """Test parsing valid wind string."""
+        direction, speed = _parse_wind_data("315-45/10-20")
+        
+        assert direction == "315-45"
+        assert speed == "10-20"
+    
+    def test_parse_empty_string(self):
+        """Test parsing empty string."""
+        direction, speed = _parse_wind_data("")
+        
+        assert direction is None
+        assert speed is None
+    
+    def test_parse_none(self):
+        """Test parsing None."""
+        direction, speed = _parse_wind_data(None)
+        
+        assert direction is None
+        assert speed is None
+
+
+class TestDailyForecast:
+    """Tests for combined daily forecast parsing."""
+    
+    def test_parse_complete_forecast(self):
+        """Test parsing both country and cities."""
+        result = parse_daily_forecast(
+            SAMPLE_COUNTRY_XML,
+            SAMPLE_CITIES_XML,
+            date(2025, 12, 22)
+        )
+        
+        assert isinstance(result, DailyForecast)
+        assert result.country_forecast is not None
+        assert len(result.city_forecasts) == 2
+        assert result.forecast_date == date(2025, 12, 22)
+
+
+class TestFallbackBehavior:
+    """Tests for fallback when data is missing/invalid."""
+    
+    def test_city_marked_as_fallback_when_using_archive(self):
+        """Test that city is marked as fallback when archive is used."""
+        # This would need a more complex setup with actual fallback data
+        # For now, just verify the flag exists
+        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        
+        # Normal data should not be marked as fallback
+        for city in result:
+            assert city.is_fallback == False
