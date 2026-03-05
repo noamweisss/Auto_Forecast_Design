@@ -23,13 +23,13 @@ lxml>=4.9.0
 python-dotenv>=1.0.0
 
 
-# === Hebrew Text Support ===
+# === HTML Rendering Support ===
 
-# BiDi algorithm for right-to-left text rendering
-python-bidi>=0.4.2
+# Template engine for injecting forecast data into HTML design
+jinja2>=3.1.0
 
-# Character reshaping for Hebrew/Arabic text
-arabic-reshaper>=3.0.0
+# Headless browser automation for taking HTML-to-image screenshots
+playwright>=1.40.0
 
 
 # === Hebrew Calendar (Optional) ===

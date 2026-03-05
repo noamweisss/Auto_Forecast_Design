@@ -1,0 +1,32 @@
+/* 
+  forecast_story.css
+  This file will contain the CSS rules that mirror the Figma design tokens.
+  The styling is applied to forecast_story.html before taking the screenshot.
+*/
+
+:root {
+    /* Design Tokens will be loaded here */
+    --canvas-width: 1080px;
+    --canvas-height: 1920px;
+    --bg-gradient-start: #DCFF57;
+    --bg-gradient-end: #22B2FF;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #333; /* Dark background so the canvas stands out if viewed in browser */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.canvas {
+    width: var(--canvas-width);
+    height: var(--canvas-height);
+    background: linear-gradient(-23deg, var(--bg-gradient-start) 62%, var(--bg-gradient-end) 112%);
+    position: relative;
+    overflow: hidden;
+    /* This makes it 1080x1920 exactly, which Playwright will screenshot */
+}
