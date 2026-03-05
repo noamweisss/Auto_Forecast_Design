@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Architecture Shift**: Rendering approach changed from Pillow (pixel drawing) to **HTML/CSS templates + Playwright screenshots**
+  - Design now lives in HTML/CSS files that mirror the Figma layout — CSS maps nearly 1:1 to Figma properties
+  - Hebrew RTL handled natively by the browser (`dir="rtl"`) — removed `python-bidi` and `arabic-reshaper` dependencies
+  - Added `jinja2` and `playwright` as new dependencies
+  - Updated all project documentation: `GEMINI.md`, `CLAUDE.md`, `README.md`, `00_initial_plan.md`
+  - Old Pillow rendering stubs replaced with new file structure (`template_renderer.py`, `templates/`)
+
 ### Added
 
 - **Data Pipeline (Phase 2)**: Complete implementation of weather data fetching, parsing, and archiving

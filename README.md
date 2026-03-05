@@ -24,14 +24,14 @@ This software is being built in collaboration with AI agents (Claude Code & Gemi
 
 The system runs automatically every morning via GitHub Actions to:
 1.  **Fetch** official weather forecast XML data from IMS servers.
-2.  **Render** a high-quality, branded weather map image (1080x1920 for Instagram Stories) using Python and Pillow, strictly adhering to our Figma design system.
+2.  **Render** a high-quality, branded weather map image (1080x1920 for Instagram Stories) using an HTML/CSS template (mirroring the Figma design) and Playwright for screenshot capture.
 3.  **Deliver** the generated image via email to the media team for distribution.
 
 ## Key Features
 
 *   **Automated Data Fetching**: Retrieves `isr_country.xml` and `isr_cities.xml` from IMS.
-*   **Design-First Rendering**: Generates images based on a Figma design system, with configuration stored in `config/design_tokens.json`.
-*   **Hebrew Support**: Full support for Right-to-Left (RTL) text and Hebrew character shaping.
+*   **Design-First Rendering**: Design lives in an HTML/CSS template that mirrors the Figma design system. Jinja2 injects forecast data, Playwright screenshots the result.
+*   **Hebrew Support**: Full RTL support handled natively by the browser via `dir="rtl"` — no manual BiDi libraries needed.
 *   **Resilience**: 7-day local archive of XML data for fallback if fetching fails.
 *   **Email Delivery**: SMTP integration to send results directly to the media team.
 
@@ -39,10 +39,11 @@ The system runs automatically every morning via GitHub Actions to:
 
 *   **Language**: Python 3.11+
 *   **Core Libraries**:
-    *   `Pillow`: Image generation and manipulation.
+    *   `Jinja2`: HTML template engine for injecting forecast data.
+    *   `Playwright`: Headless browser for HTML → image screenshots.
+    *   `Pillow`: Image format conversion (JPEG/PNG saving).
     *   `lxml`: XML parsing.
     *   `requests`: HTTP data fetching.
-    *   `python-bidi` & `arabic-reshaper`: Hebrew text handling.
 *   **Automation**: GitHub Actions (Daily Cron).
 
 ## Getting Started
@@ -75,7 +76,12 @@ The system runs automatically every morning via GitHub Actions to:
     pip install -r requirements.txt
     ```
 
-4.  **Configuration**:
+4.  **Install Playwright's browser** (one-time setup):
+    ```bash
+    playwright install chromium
+    ```
+
+5.  **Configuration**:
     *   Ensure `config/design_tokens.json` exists (contains Figma design values).
     *   Create a `.env` file for secrets like email credentials.
 

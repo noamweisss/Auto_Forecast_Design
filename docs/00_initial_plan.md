@@ -93,6 +93,8 @@ arabic-reshaper>=3.0.0 # Hebrew/Arabic character shaping
 
 ### Why Pillow for Image Generation?
 
+> **⚠️ SUPERSEDED (2026-03-05):** The rendering approach has been changed to **HTML/CSS templates + Playwright screenshots**. Pillow is still used for image format conversion (JPEG/PNG saving), but the rendering logic now lives in HTML/CSS. The original rationale below is preserved for historical context.
+
 Initial consideration was given to browser-based screenshot approaches (HTML/CSS → image), but **Pillow** was chosen because:
 
 1. **Pixel-perfect control** — Every element is positioned with exact coordinates
@@ -939,6 +941,7 @@ def draw_hebrew_text(draw: ImageDraw, text: str, position: tuple, font: ImageFon
 |---------|------|---------|
 | 1.0 | 2024-12-18 | Initial plan created |
 | 1.1 | 2025-12-22 | Updated design tokens with actual values extracted from Figma via MCP |
+| 1.2 | 2026-03-05 | **Architecture shift:** Rendering changed from Pillow to HTML/CSS + Playwright. See `CLAUDE.md` and `GEMINI.md` for updated architecture. Pillow rationale preserved as historical context. |
 
 ---
 
