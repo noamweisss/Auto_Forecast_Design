@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added one validated, immutable settings load for cities, Israel weather codes, and design tokens, including cross-file city-position checks.
 - Added import-safety and outside-repository subprocess coverage, plus `tzdata` for reliable `Asia/Jerusalem` support on Windows and minimal environments.
 - Added sanitized, committed IMS XML fixtures, baseline asset contracts, and an offline pull-request CI workflow.
-- Added strict temporary characterization tests for parser defects F-02 and F-03; the defects remain unfixed.
+- Added normal regression coverage for exact-date fallback (F-02) and complete 15-city output after invalid optional data (F-03).
 - Added modest Ruff and Mypy advisory configuration for Python 3.11.
 - Added `src/app_paths.py`, `docs/ARCHITECTURE.md`, and configuration contract tests as the first July 2026 refactor slice.
 - Added `pyproject.toml` with the default pytest command.
@@ -30,9 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Replaced date-named XML archive behavior with sealed snapshot records; legacy `.xml` archives are deliberately ignored rather than assigned invented metadata.
 - Archive lookup now requires the requested forecast date inside validated snapshot metadata and returns newest matching records as archive sources.
-- City and daily parsers now receive validated settings explicitly; all parsers receive an explicit target date and fallback XML remains keyword-only.
+- Replaced loose-XML parser inputs with preferred-first validated snapshot sequences and exact-date selection.
 - Logging and `.env` loading now happen explicitly in `main()`; importing library modules no longer creates log files or loads environment files.
-- Added optional forecast provenance fields as a migration bridge. Snapshot population and fallback truthfulness remain deferred to the next slice.
+- Made country/city provenance required, and derive fallback state from the recorded source selection instead of a separate mutable flag.
+- Updated the manual JSON exporter to use structured fetching, snapshot construction/storage, exact-date parsing, and per-value provenance.
 - Anchored parser, archive, output, log, token, and icon paths to the repository instead of the shell working directory.
 - Corrected README claims so unfinished rendering, email, and automation are
   clearly distinguished from implemented data work.
@@ -65,6 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed F-02: an older snapshot may supply values only for the exact requested date; another day's values are never relabelled.
+- Fixed F-03: invalid city data now falls back per city or raises one actionable error instead of returning fewer than 15 configured cities.
+- Reject missing/duplicate configured cities, invalid temperatures, unknown weather codes, malformed humidity/wind, and missing Hebrew country text.
 - City name spelling consistency (Eilat not Elat, Ein Gedi not En Gedi)
 - XML encoding detection for IMS Hebrew content (Windows-1255 / ISO-8859-8)
 - XML declaration normalization for lxml parsing

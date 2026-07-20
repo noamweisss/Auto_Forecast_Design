@@ -45,15 +45,22 @@ assert after == before, (before, after)
 def test_settings_and_fixture_parsing_work_outside_repository(tmp_path):
     fixture = PATHS.root / "tests" / "fixtures" / "ims" / "cities_forecast.xml"
     script = f"""
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from src.app_paths import AppPaths
 from src.data.parser import parse_cities_forecast
+from src.data.snapshots import FeedType, SnapshotSource, build_snapshot
 from src.settings import load_settings
 paths = AppPaths.from_repository()
 settings = load_settings(paths)
 xml = Path({str(fixture)!r}).read_text(encoding='utf-8')
-cities = parse_cities_forecast(xml, date(2025, 12, 17), settings=settings)
+snapshot = build_snapshot(
+    xml,
+    FeedType.CITIES,
+    source=SnapshotSource.FIXTURE,
+    fetched_at=datetime(2025, 12, 17, 3, 0, tzinfo=timezone.utc),
+)
+cities = parse_cities_forecast([snapshot], date(2025, 12, 17), settings=settings)
 assert len(cities) == 15
 assert next(city for city in cities if city.city_id == '510').internal_key == 'jerusalem'
 """

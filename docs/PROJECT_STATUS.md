@@ -17,9 +17,9 @@ from real IMS data. Email and scheduled automation come later.
 | --- | --- | --- |
 | Shared paths | Implemented | `src/app_paths.py` anchors repository paths so commands do not depend on the shell directory. |
 | Clock and settings boundary | Implemented | `main()` establishes paths, local `.env`, Israel time, logging, and one validated immutable settings load in that order. |
-| Data models | Implemented | Forecast objects and validation exist in `src/data/models.py`. |
+| Data models | Implemented | Every country/city value has required source provenance; a daily forecast is rejected unless it has one date and 15 unique cities. |
 | IMS fetching | Implemented | Country and city acquisition returns either decoded XML or a structured failure with its exact attempt count. |
-| XML parsing | Implemented | XML is converted using an explicit target date and passed-in validated settings. Two known fallback defects remain characterized. |
+| XML parsing | Implemented | Ordered snapshots are resolved for one exact date. Each city may independently fall back, but incomplete or invalid data fails the whole forecast. |
 | Validated snapshots | Implemented | IMS XML can be sealed with its real issue time, fetch time, feed, and complete forecast-date set. This proves source structure, not publishability. |
 | Snapshot store | Implemented | Valid snapshots are atomically stored as UTF-8 JSON and selected by metadata within an explicit seven-day window. |
 | Design assets | Available | Figma-derived tokens, fonts, icons, logos, and map assets are committed. |
@@ -33,10 +33,11 @@ from real IMS data. Email and scheduled automation come later.
 
 ## Verification snapshot
 
-On 2026-07-20, the offline suite passed 119 tests with the two strict expected
-failures for F-02 and F-03 still present. The run used the isolated audit
-environment and a writable pytest temporary directory. Rendering output was not
-inspected because this slice does not implement or change rendering.
+On 2026-07-20, the offline suite passed 140 tests with no expected failures.
+The normal passing regressions for F-02 and F-03 prove exact-date fallback and
+complete 15-city output. The run used the isolated audit environment and a
+writable pytest temporary directory. Rendering output was not inspected because
+this slice does not implement or change rendering.
 
 ## Recommended next milestone
 
@@ -70,15 +71,14 @@ capabilities, not baseline assumptions.
 
 ## Refactor progress
 
-The July 2026 refactor now also has Slice 2A acquisition and storage: structured
-fetch failures, validated time-stamped IMS snapshots, atomic JSON records, and
-exact-date archive lookup based on record metadata rather than filenames.
-Parser defects F-02 (multi-date fallback selection) and F-03 (incomplete
-forecasts after invalid optional city data) remain strict expected failures.
-Slice 2B must connect these source records to parsing, populate provenance, and
-repair fallback/value behavior. A stored snapshot is not yet proof that every
-forecast value is safe to publish. Rendering is still unimplemented. See
-[Architecture](ARCHITECTURE.md) for the current boundary.
+The July 2026 refactor now has a trustworthy data boundary: structured fetch
+failures, validated time-stamped IMS snapshots, atomic JSON records, exact-date
+archive lookup, strict parsing, and required provenance. F-02 and F-03 are
+repaired. An older *download* may safely help when its multi-day XML still
+contains the exact future day requested. Values for yesterday are never renamed
+as today's forecast.
+Rendering is still unimplemented. See [Architecture](ARCHITECTURE.md) for the
+current boundary.
 
 ## Source-of-truth order
 

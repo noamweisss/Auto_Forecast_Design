@@ -1,50 +1,58 @@
-"""
-Manual Data Verification Script
-
-This script fetches live data from IMS and exports it to a readable JSON file.
-Use this to verify the data pipeline is working correctly.
-
-Usage:
-    python tests/manual/export_forecast_json.py
-
-Output:
-    tests/manual/output/forecast_YYYY-MM-DD.json
-"""
+"""Fetch IMS snapshots and export one parsed forecast for manual inspection."""
 
 import json
 import sys
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.data.fetcher import fetch_cities_forecast, fetch_country_forecast  # noqa: E402
-from src.data.parser import parse_daily_forecast  # noqa: E402
 from src.app_paths import AppPaths  # noqa: E402
 from src.clock import SystemClock  # noqa: E402
+from src.data.archive import SnapshotStore  # noqa: E402
+from src.data.fetcher import fetch_feed  # noqa: E402
+from src.data.parser import ForecastDataError, parse_daily_forecast  # noqa: E402
+from src.data.snapshots import (  # noqa: E402
+    FeedType,
+    ForecastProvenance,
+    SnapshotSource,
+    build_snapshot,
+)
 from src.settings import load_settings  # noqa: E402
 
-# Output directory
+
 OUTPUT_DIR = Path(__file__).parent / "output"
 
 
-def forecast_to_dict(forecast) -> dict:
-    """Convert DailyForecast object to a readable dictionary."""
+def _provenance_to_dict(provenance: ForecastProvenance) -> dict:
+    return {
+        "snapshot_id": provenance.snapshot_id,
+        "feed_type": provenance.feed_type.value,
+        "source": provenance.source.value,
+        "fetched_at": provenance.fetched_at.isoformat(),
+        "issued_at": provenance.issued_at.isoformat(),
+        "source_forecast_date": provenance.source_forecast_date.isoformat(),
+        "fallback_reason": provenance.fallback_reason,
+    }
+
+
+def forecast_to_dict(forecast, generated_at) -> dict:
+    """Convert a DailyForecast and each value's source facts to JSON."""
     return {
         "_meta": {
             "description": "IMS Weather Forecast - Parsed Data Export",
-            "generated_at": forecast.xml_fetch_time.isoformat(),
+            "generated_at": generated_at.isoformat(),
             "forecast_date": forecast.forecast_date.isoformat(),
             "is_fallback": forecast.is_fallback,
-            "city_count": len(forecast.city_forecasts)
+            "city_count": len(forecast.city_forecasts),
         },
         "country_forecast": {
             "date": forecast.country_forecast.forecast_date.isoformat(),
             "description_hebrew": forecast.country_forecast.description_hebrew,
             "description_english": forecast.country_forecast.description_english,
             "warning_hebrew": forecast.country_forecast.warning_hebrew,
-            "warning_english": forecast.country_forecast.warning_english
+            "warning_english": forecast.country_forecast.warning_english,
+            "provenance": _provenance_to_dict(forecast.country_forecast.provenance),
         },
         "city_forecasts": [
             {
@@ -53,83 +61,71 @@ def forecast_to_dict(forecast) -> dict:
                 "city_name_hebrew": city.city_name_hebrew,
                 "city_name_english": city.city_name_english,
                 "date": city.forecast_date.isoformat(),
-                "temperature": {
-                    "min": city.min_temp,
-                    "max": city.max_temp,
-                    "display": f"{city.min_temp}°-{city.max_temp}°"
-                },
+                "temperature": {"min": city.min_temp, "max": city.max_temp},
                 "weather": {
                     "code": city.weather_code,
                     "description_hebrew": city.weather_description_hebrew,
-                    "description_english": city.weather_description_english
+                    "description_english": city.weather_description_english,
                 },
-                "humidity": {
-                    "min": city.humidity_min,
-                    "max": city.humidity_max
-                } if city.humidity_min else None,
-                "wind": {
-                    "direction": city.wind_direction,
-                    "speed_kmh": city.wind_speed
-                } if city.wind_direction else None,
-                "is_fallback": city.is_fallback
+                "humidity": {"min": city.humidity_min, "max": city.humidity_max},
+                "wind": {"direction": city.wind_direction, "speed_kmh": city.wind_speed},
+                "is_fallback": city.is_fallback,
+                "provenance": _provenance_to_dict(city.provenance),
             }
             for city in forecast.city_forecasts
-        ]
+        ],
     }
 
 
-def main():
-    print("=" * 60)
-    print("IMS FORECAST DATA EXPORT")
-    print("=" * 60)
-    print()
-    
+def main() -> int:
     paths = AppPaths.from_repository()
     settings = load_settings(paths)
-    target_date = SystemClock().now().date()
+    now = SystemClock().now()
+    target_date = now.date()
+    store = SnapshotStore(paths.archive)
+    candidates = {}
+    failure_reasons = {}
 
-    # Fetch data
-    print("Fetching data from IMS...")
-    country_xml = fetch_country_forecast()
-    cities_xml = fetch_cities_forecast()
-    
-    if not country_xml or not cities_xml:
-        print("ERROR: Failed to fetch data from IMS")
+    for feed_type in FeedType:
+        archived = list(store.find_for_date(feed_type, target_date, as_of=now))
+        result = fetch_feed(feed_type)
+        if result.xml is not None:
+            live = build_snapshot(
+                result.xml,
+                feed_type,
+                source=SnapshotSource.LIVE,
+                fetched_at=now,
+            )
+            store.save(live)
+            candidates[feed_type] = [live, *archived]
+        else:
+            candidates[feed_type] = archived
+            failure = result.failure
+            failure_reasons[feed_type] = (
+                failure.message if failure is not None else "IMS feed unavailable"
+            )
+
+    try:
+        forecast = parse_daily_forecast(
+            candidates[FeedType.COUNTRY],
+            candidates[FeedType.CITIES],
+            target_date,
+            settings=settings,
+            feed_failure_reasons=failure_reasons,
+        )
+    except ForecastDataError as error:
+        print(f"ERROR: {error}")
         return 1
-    
-    # Parse data
-    print("Parsing XML data...")
-    forecast = parse_daily_forecast(
-        country_xml,
-        cities_xml,
-        target_date,
-        settings=settings,
-    )
-    
-    # Convert to dictionary
-    data = forecast_to_dict(forecast)
-    
-    # Create output directory
+
     OUTPUT_DIR.mkdir(exist_ok=True)
-    
-    # Save to JSON
-    output_file = OUTPUT_DIR / f"forecast_{forecast.forecast_date.isoformat()}.json"
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    
-    print()
-    print("SUCCESS!")
-    print(f"Exported to: {output_file}")
-    print()
-    print("Summary:")
-    print(f"  - Forecast date: {forecast.forecast_date}")
-    print(f"  - Cities parsed: {len(forecast.city_forecasts)}")
-    print(f"  - Fallback used: {forecast.is_fallback}")
-    print()
-    print("Open the JSON file to see all the parsed data!")
-    
+    output_file = OUTPUT_DIR / f"forecast_{target_date.isoformat()}.json"
+    output_file.write_text(
+        json.dumps(forecast_to_dict(forecast, now), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"Exported {len(forecast.city_forecasts)} cities to {output_file}")
     return 0
 
 
 if __name__ == "__main__":
-    exit(main())
+    raise SystemExit(main())

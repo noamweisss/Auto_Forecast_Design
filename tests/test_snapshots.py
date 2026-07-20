@@ -256,6 +256,18 @@ def test_forecast_provenance_records_exact_source_date_and_optional_reason():
     assert provenance.fallback_reason == "live feed unavailable"
 
 
+def test_archived_provenance_requires_a_nonempty_fallback_reason():
+    with pytest.raises(ValueError, match="archived provenance.*fallback reason"):
+        ForecastProvenance(
+            snapshot_id="country-archive-1",
+            feed_type=FeedType.COUNTRY,
+            source=SnapshotSource.ARCHIVE,
+            fetched_at=AWARE_TIME,
+            issued_at=AWARE_TIME,
+            source_forecast_date=date(2026, 7, 20),
+        )
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [

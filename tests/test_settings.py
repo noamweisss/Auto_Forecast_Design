@@ -2,24 +2,25 @@
 
 import json
 from dataclasses import FrozenInstanceError
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from src.app_paths import AppPaths, PATHS
 from src.data.parser import parse_cities_forecast
+from src.data.snapshots import FeedType, SnapshotSource, build_snapshot
 from src.settings import ConfigurationError, load_settings
+from tests.conftest import load_ims_fixture
 
 
-SINGLE_CITY_XML = """<IsraelCitiesWeatherForecastMorning>
-<Location><LocationMetaData><LocationId>510</LocationId>
-<LocationNameEng>XML name</LocationNameEng><LocationNameHeb>XML Hebrew</LocationNameHeb>
-</LocationMetaData><LocationData><TimeUnitData><Date>2026-07-20</Date>
-<Element><ElementName>Maximum temperature</ElementName><ElementValue>30</ElementValue></Element>
-<Element><ElementName>Minimum temperature</ElementName><ElementValue>20</ElementValue></Element>
-<Element><ElementName>Weather code</ElementName><ElementValue>1250</ElementValue></Element>
-</TimeUnitData></LocationData></Location></IsraelCitiesWeatherForecastMorning>"""
+def _fixture_snapshot():
+    return build_snapshot(
+        load_ims_fixture("cities_forecast.xml"),
+        FeedType.CITIES,
+        source=SnapshotSource.FIXTURE,
+        fetched_at=datetime(2025, 12, 17, 3, 0, tzinfo=timezone.utc),
+    )
 
 
 def _copy_valid_config(destination: Path) -> AppPaths:
@@ -67,9 +68,13 @@ def test_city_parser_uses_the_explicit_settings_value(tmp_path):
     _write_json(paths, "cities.json", cities)
     settings = load_settings(paths)
 
-    city = parse_cities_forecast(
-        SINGLE_CITY_XML, date(2026, 7, 20), settings=settings
-    )[0]
+    city = next(
+        city
+        for city in parse_cities_forecast(
+            [_fixture_snapshot()], date(2025, 12, 17), settings=settings
+        )
+        if city.city_id == "510"
+    )
 
     assert city.city_name_english == "Configured Jerusalem"
 
@@ -78,7 +83,7 @@ def test_city_parser_requires_keyword_only_settings():
     settings = load_settings(PATHS)
 
     with pytest.raises(TypeError):
-        parse_cities_forecast(SINGLE_CITY_XML, date(2026, 7, 20), settings)
+        parse_cities_forecast([_fixture_snapshot()], date(2025, 12, 17), settings)
 
 
 @pytest.mark.parametrize("filename", ["cities.json", "00_ims_weather_codes.json", "design_tokens.json"])

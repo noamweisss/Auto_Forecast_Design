@@ -56,10 +56,23 @@ and exact forecast-date set; filenames do not decide whether a record is useful.
 Legacy date-named XML files are ignored because they lack trustworthy issue and
 fetch metadata.
 
-These checks establish trustworthy source history only. Storing a snapshot does
-not mean every country or city value is publishable. Forecast models still allow
-optional provenance as a migration bridge; Slice 2B must connect selected
-snapshots to parsing and enforce value/provenance truthfulness.
+`src/data/parser.py` accepts preferred-first snapshot sequences. It ignores
+wrong-feed snapshots and snapshots without the requested date, then validates
+publishable values. Country text must include a nonempty Hebrew description.
+Every configured city must have valid temperatures and a known weather code;
+present humidity and wind values must also be valid. One bad city may use the
+next exact-date snapshot without moving the other 14 cities to that source.
+
+This distinction matters: an XML file downloaded yesterday can contain a
+forecast for tomorrow. Using tomorrow's entry from that older download is safe
+because its source date remains tomorrow. Taking yesterday's values and merely
+labelling them as tomorrow is prohibited.
+
+`src/data/models.py` is the final data gate before future rendering. Country and
+city provenance is required. A `DailyForecast` must contain exactly 15 unique
+cities, and every component date must equal the requested date. Fallback flags
+are read-only properties derived from provenance, so a value cannot claim to be
+live while its recorded source says otherwise.
 
 ## Import safety
 
@@ -71,11 +84,8 @@ current working directory.
 
 ## Current boundary
 
-Slice 2A validates acquisition and snapshot storage without changing parser
-fallback or value behavior. Two audit defects remain visible as strict
-temporary expected failures: F-02 chooses the first fallback date from
-multi-date XML, and F-03 can silently return fewer than the configured 15
-cities after invalid optional data. The renderer and end-to-end workflow remain
-placeholders. Slice 2B should fix those parser contracts, consume validated
-snapshot candidates, and populate truthful fallback provenance before an image
-pipeline is connected.
+The data layer now fetches, seals, stores, and parses exact-date snapshots into
+one complete provenance-backed forecast. F-02 and F-03 are normal passing
+regressions: fallback never selects another XML date, and invalid optional data
+cannot produce a 14-city result. The renderer and end-to-end workflow remain
+placeholders; `src/main.py` still does not run this data path.

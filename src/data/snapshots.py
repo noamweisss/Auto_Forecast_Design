@@ -66,10 +66,18 @@ class ForecastProvenance:
 
     def __post_init__(self) -> None:
         _require_nonempty_text("snapshot_id", self.snapshot_id)
+        if not isinstance(self.feed_type, FeedType):
+            raise ValueError("feed_type must be a FeedType")
+        if not isinstance(self.source, SnapshotSource):
+            raise ValueError("source must be a SnapshotSource")
         _require_aware("fetched_at", self.fetched_at)
         _require_aware("issued_at", self.issued_at)
-        if not isinstance(self.source_forecast_date, date):
+        if type(self.source_forecast_date) is not date:
             raise ValueError("source_forecast_date must be a date")
+        if self.fallback_reason is not None:
+            _require_nonempty_text("fallback_reason", self.fallback_reason)
+        if self.source is SnapshotSource.ARCHIVE and self.fallback_reason is None:
+            raise ValueError("archived provenance requires a nonempty fallback reason")
 
 
 def _require_nonempty_text(field_name: str, value: str) -> None:
