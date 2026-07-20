@@ -24,6 +24,7 @@ from real IMS data. Email and scheduled automation come later.
 | Snapshot store | Implemented | Valid snapshots are atomically stored as UTF-8 JSON and selected by metadata within an explicit seven-day window. |
 | Design assets | Validated | The complete SVG map/logos, 23 catalog-selected icons, and Black/SemiBold fonts are checked before rendering. |
 | Story render context | Implemented | One frozen packing list supplies exact header text, 15 physical city positions, temperatures, icon/file URIs, and fallback state. |
+| Frozen visual reference | Available | A verified 1080x1920 Figma export, sanitized matching forecast, and exact metadata/hashes provide an offline target without live Figma access. |
 | HTML/CSS template | Placeholder | The 1080x1920 canvas exists, but it contains placeholder text rather than the design. |
 | Playwright renderer | Placeholder | `TemplateRenderer.render()` raises `NotImplementedError`. |
 | Image saving | Implemented | Pillow images can be saved as JPEG and PNG. |
@@ -33,22 +34,27 @@ from real IMS data. Email and scheduled automation come later.
 
 ## Verification snapshot
 
-On 2026-07-20, the offline suite passed 174 tests with no expected failures.
+On 2026-07-20, the offline suite passed 181 tests with no expected failures.
 The normal passing regressions for F-02 and F-03 prove exact-date fallback and
 complete 15-city output. The run used the isolated audit environment and a
 writable pytest temporary directory. Rendering output was not inspected because
-this slice validates inputs but does not implement HTML/CSS or screenshots.
+the application still does not implement HTML/CSS or screenshots. The frozen
+reference export itself was rechecked at normal size, and its dimensions,
+bytes, SHA-256, matching fixture, and local asset hashes are enforced offline.
+The Story deliberately uses Figma's visible Hebrew label `תל אביב` for city
+402. Its stable ID, `tel_aviv` internal key, English/source identity
+`Tel Aviv - Yafo`, and IMS forecast data remain unchanged.
 
 ## Recommended next milestone
 
 Produce one real local image before building email or scheduling:
 
-1. Add the frozen Figma reference package defined for Slice 3B.
-2. Turn `forecast_story.html` and `.css` into the real RTL design using the
+1. Turn `forecast_story.html` and `.css` into the real RTL design using the
    committed tokens and assets.
-3. Implement `TemplateRenderer.render()` with Jinja2 and Playwright.
-4. Connect the existing data pipeline to the renderer for one date.
-5. Inspect the resulting 1080x1920 image at normal size.
+2. Implement `TemplateRenderer.render()` with Jinja2 and Playwright.
+3. Connect the existing data pipeline to the renderer for one date.
+4. Inspect the resulting 1080x1920 image at normal size against the frozen
+   reference.
 
 This is intentionally one product milestone rather than a request to finish the
 entire delivery system.
@@ -60,7 +66,8 @@ The repository now keeps remote work reproducible through:
 - A committed root `AGENTS.md` with exact checks and completion rules.
 - `scripts/setup_codex_cloud.sh` for Python dependencies and Chromium.
 - `.env.example` with names only and no credentials.
-- Git LFS rules for fonts and binary design assets.
+- Git LFS rules plus setup/CI hydration checks for fonts and binary design
+  assets.
 - Ignore rules for generated forecasts, fetched XML, credentials, caches, local
   environments, private journals, and machine-specific agent files.
 
@@ -80,6 +87,9 @@ The design boundary now also produces one validated Story render context. It
 uses the verified 1080x1920 canvas, keeps all city x/y coordinates physical
 from the top-left (never RTL-mirrored), formats the exact Hebrew-calendar
 header, and refuses missing or unhydrated local assets before a browser opens.
+The repository now also carries the exact Figma node `1:2` export and matching
+sanitized mock forecast as an offline visual oracle. This makes layout work
+reproducible without claiming that the mock values are a real IMS forecast.
 Rendering is still unimplemented. See [Architecture](ARCHITECTURE.md) for the
 current boundary.
 

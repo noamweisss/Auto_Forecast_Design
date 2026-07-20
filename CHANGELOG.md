@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a frozen 1080x1920 Figma Story export, its sanitized matching forecast
+  fixture, exact source/asset hashes, and an offline visual-review guide.
+- Added a test-only fixture builder that turns the sanitized reference JSON
+  into the real `DailyForecast` and Story render context without IMS or Figma.
 - Added a frozen, validated Story render context with exact header fields, 15 ordered city labels, physical positions, local asset URIs, and derived fallback state.
 - Added Pyluach-based Hebrew-calendar formatting for the approved `כ״ו בחשוון התשפ״ו` header text.
 - Added structured IMS fetch results with explicit retryable failure kinds, exact attempt counts, and offline-injected request/sleep boundaries.
@@ -30,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Matched city 402's Story-only Hebrew display label to Figma's visible
+  `תל אביב`. Its stable ID, `tel_aviv` key, English/source identity
+  `Tel Aviv - Yafo`, and IMS forecast data are unchanged.
+- Hydrated and verified committed Git LFS assets in pull-request CI and Codex
+  cloud setup before Python installation or offline tests.
 - Consolidated all 23 supported Israel weather descriptions and icon filenames into one validated catalog, including documented deliberate icon reuse.
 - Reduced structured design JSON to Figma metadata, the fixed 1080x1920 canvas, and 15 top-left physical city positions.
 - Removed the duplicate icon mapping and unimplemented design-token accessor modules; future visual styling belongs in HTML/CSS.

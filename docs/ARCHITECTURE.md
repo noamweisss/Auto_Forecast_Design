@@ -67,6 +67,24 @@ The header retains separate bidi-safe fields: numeric Gregorian text such as
 `כ״ו בחשוון התשפ״ו`. Slice 4 can isolate those runs while displaying the single
 verified Figma line.
 
+## Offline visual reference
+
+`docs/design-reference/` contains the exact 1x export of Figma node `1:2`, its
+source and asset hashes, and a beginner-readable visual policy. The matching
+`tests/fixtures/render/forecast_story_reference.json` contains sanitized mock
+values for the same date, text, 15 cities, temperature ranges, and weather icon.
+It is deliberately not described as a real IMS forecast.
+
+Tests can build that JSON into the real `DailyForecast` and
+`StoryRenderContext`, so renderer work can compare like with like without IMS,
+Figma, credentials, or another network service. The PNG is the frozen target
+appearance; future HTML/CSS is the editable implementation source.
+
+The automated contracts guard exact bytes, dimensions, provenance metadata,
+fixture content, and hydrated asset hashes. They do not replace human visual
+review. After renderer changes, the actual 1080x1920 output must still be
+opened at normal size and compared with the reference.
+
 ## Snapshots and provenance
 
 `src/data/snapshots.py` names the two feed types and three possible sources, and
@@ -115,6 +133,7 @@ current working directory.
 
 The data layer fetches, seals, stores, and parses exact-date snapshots into one
 complete provenance-backed forecast. The design layer now validates and packs
-that forecast for a future Story template. The HTML/CSS renderer, frozen visual
-reference package, and end-to-end workflow remain unfinished; `src/main.py`
+that forecast for a future Story template, and the frozen offline reference
+package provides the exact visual target and matching mock context. The
+HTML/CSS renderer and end-to-end workflow remain unfinished; `src/main.py`
 still does not run this data path.

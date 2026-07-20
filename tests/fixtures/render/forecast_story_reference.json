@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "_meta": {
+    "kind": "sanitized_design_reference",
+    "description": "Mock values that match the frozen Figma Story reference for layout work.",
+    "is_real_ims_forecast": false
+  },
+  "target_date": "2025-11-17",
+  "expected_header": {
+    "gregorian_numeric": "17/11/2025",
+    "hebrew_calendar": "כ״ו בחשוון התשפ״ו"
+  },
+  "provenance": {
+    "source": "fixture",
+    "country_snapshot_id": "figma-reference-country-2025-11-17",
+    "cities_snapshot_id": "figma-reference-cities-2025-11-17",
+    "issued_at": "2025-11-17T04:23:00+02:00",
+    "fetched_at": "2025-11-17T05:00:00+02:00"
+  },
+  "country": {
+    "description_hebrew": "היום: מעונן חלקית עד מעונן בעננות בגובה רב. תחול עלייה בטמפרטורות והן יחזרו להיות רגילות לעונה. בשעות הבוקר ינשבו רוחות מזרחיות ערות בהרי הצפון. הלילה: בהיר בד\"כ. ינשבו רוחות מזרחיות חזקות בהרי הצפון והמרכז."
+  },
+  "cities": [
+    {
+      "city_id": "520",
+      "internal_key": "eilat",
+      "name_hebrew": "אילת",
+      "name_english": "Eilat",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "114",
+      "internal_key": "ashdod",
+      "name_hebrew": "אשדוד",
+      "name_english": "Ashdod",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "513",
+      "internal_key": "beer_sheva",
+      "name_hebrew": "באר שבע",
+      "name_english": "Beer Sheva",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "203",
+      "internal_key": "bet_shean",
+      "name_hebrew": "בית שאן",
+      "name_english": "Bet Shean",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "115",
+      "internal_key": "haifa",
+      "name_hebrew": "חיפה",
+      "name_english": "Haifa",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "202",
+      "internal_key": "tiberias",
+      "name_hebrew": "טבריה",
+      "name_english": "Tiberias",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "510",
+      "internal_key": "jerusalem",
+      "name_hebrew": "ירושלים",
+      "name_english": "Jerusalem",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "204",
+      "internal_key": "lod",
+      "name_hebrew": "לוד",
+      "name_english": "Lod",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "106",
+      "internal_key": "mizpe_ramon",
+      "name_hebrew": "מצפה רמון",
+      "name_english": "Mizpe Ramon",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "207",
+      "internal_key": "nazareth",
+      "name_hebrew": "נצרת",
+      "name_english": "Nazareth",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "105",
+      "internal_key": "ein_gedi",
+      "name_hebrew": "עין גדי",
+      "name_english": "Ein Gedi",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "209",
+      "internal_key": "afula",
+      "name_hebrew": "עפולה",
+      "name_english": "Afula",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "507",
+      "internal_key": "zefat",
+      "name_hebrew": "צפת",
+      "name_english": "Zefat",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "201",
+      "internal_key": "qazrin",
+      "name_hebrew": "קצרין",
+      "name_english": "Qazrin",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    },
+    {
+      "city_id": "402",
+      "internal_key": "tel_aviv",
+      "name_hebrew": "תל אביב",
+      "name_english": "Tel Aviv - Yafo",
+      "min_temp": 19,
+      "max_temp": 27,
+      "weather_code": "1530"
+    }
+  ]
+}
