@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added structured IMS fetch results with explicit retryable failure kinds, exact attempt counts, and offline-injected request/sleep boundaries.
+- Added validated snapshot construction from IMS issue time, forecast dates, feed identity, fetch time, and a deterministic content-based ID.
+- Added an atomic UTF-8 JSON snapshot store with metadata-based seven-day lookup and cleanup.
 - Added an Israel-aware application clock and a small snapshot/provenance vocabulary for later fallback work.
 - Added one validated, immutable settings load for cities, Israel weather codes, and design tokens, including cross-file city-position checks.
 - Added import-safety and outside-repository subprocess coverage, plus `tzdata` for reliable `Asia/Jerusalem` support on Windows and minimal environments.
@@ -25,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replaced date-named XML archive behavior with sealed snapshot records; legacy `.xml` archives are deliberately ignored rather than assigned invented metadata.
+- Archive lookup now requires the requested forecast date inside validated snapshot metadata and returns newest matching records as archive sources.
 - City and daily parsers now receive validated settings explicitly; all parsers receive an explicit target date and fallback XML remains keyword-only.
 - Logging and `.env` loading now happen explicitly in `main()`; importing library modules no longer creates log files or loads environment files.
 - Added optional forecast provenance fields as a migration bridge. Snapshot population and fallback truthfulness remain deferred to the next slice.

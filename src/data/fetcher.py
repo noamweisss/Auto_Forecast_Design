@@ -1,181 +1,232 @@
-"""
-XML Fetcher - Download Weather Data from IMS
+"""Structured, retrying acquisition of IMS forecast feeds.
 
-This module handles fetching XML forecast data from the Israel
-Meteorological Service (IMS) website.
-
-Data Sources:
-    - Country forecast: https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_country.xml
-    - Cities forecast: https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_cities.xml
-
-Both files contain Hebrew text, so proper UTF-8 encoding is critical.
-
-Usage:
-    from src.data.fetcher import fetch_country_forecast, fetch_cities_forecast
-    
-    country_xml = fetch_country_forecast()
-    cities_xml = fetch_cities_forecast()
+The public ``fetch_feed`` function returns either XML or a readable failure;
+callers never have to guess why a request returned ``None``. Network and sleep
+functions are ordinary injected arguments so the automated suite stays offline.
 """
 
+from dataclasses import dataclass
+from enum import Enum
 import logging
+import re
 import time
+from typing import Callable, Optional
+
 import requests
-from typing import Optional
+
+from src.data.snapshots import FeedType
+
 
 logger = logging.getLogger(__name__)
 
-# IMS XML data URLs
-COUNTRY_FORECAST_URL = "https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_country.xml"
-CITIES_FORECAST_URL = "https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_cities.xml"
+COUNTRY_FORECAST_URL = (
+    "https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_country.xml"
+)
+CITIES_FORECAST_URL = (
+    "https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_cities.xml"
+)
 
-# Request configuration
-REQUEST_TIMEOUT = 30  # seconds
-RETRY_DELAYS = [30, 60]  # Wait times between retries (seconds)
+_FEED_URLS = {
+    FeedType.COUNTRY: COUNTRY_FORECAST_URL,
+    FeedType.CITIES: CITIES_FORECAST_URL,
+}
+_DECODING_ORDER = ("utf-8", "windows-1255", "iso-8859-8")
+_ENCODING_ALIASES = {
+    "utf-8": "utf-8",
+    "utf8": "utf-8",
+    "windows-1255": "windows-1255",
+    "cp1255": "windows-1255",
+    "iso-8859-8": "iso-8859-8",
+    "iso8859-8": "iso-8859-8",
+}
 
 
+class FetchFailureKind(str, Enum):
+    TIMEOUT = "timeout"
+    HTTP = "http"
+    CONNECTION = "connection"
+    REQUEST = "request"
+    DECODE = "decode"
+
+
+@dataclass(frozen=True)
+class FetchFailure:
+    kind: FetchFailureKind
+    message: str
+    status_code: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kind, FetchFailureKind):
+            raise ValueError("kind must be a FetchFailureKind")
+        if not isinstance(self.message, str) or not self.message.strip():
+            raise ValueError("message must be nonempty")
+
+
+@dataclass(frozen=True)
+class FetchResult:
+    feed_type: FeedType
+    url: str
+    attempt_count: int
+    xml: Optional[str] = None
+    failure: Optional[FetchFailure] = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.feed_type, FeedType):
+            raise ValueError("feed_type must be a FeedType")
+        if not isinstance(self.url, str) or not self.url.strip():
+            raise ValueError("url must be nonempty")
+        if not isinstance(self.attempt_count, int) or self.attempt_count <= 0:
+            raise ValueError("attempt_count must be positive")
+        if (self.xml is None) == (self.failure is None):
+            raise ValueError("FetchResult requires exactly one of xml or failure")
+        if self.xml is not None and not isinstance(self.xml, str):
+            raise ValueError("xml must be a string")
+        if self.failure is not None and not isinstance(self.failure, FetchFailure):
+            raise ValueError("failure must be a FetchFailure")
+        if self.xml is not None and not self.xml:
+            raise ValueError("xml must be nonempty")
+
+    @property
+    def succeeded(self) -> bool:
+        return self.xml is not None
+
+
+def fetch_feed(
+    feed_type: FeedType,
+    *,
+    request_get: Callable = requests.get,
+    sleep: Callable[[float], None] = time.sleep,
+    timeout_seconds: float = 30,
+    retry_delays: tuple[float, ...] = (30, 60),
+) -> FetchResult:
+    """Fetch one IMS feed with explicit retries and structured failure details."""
+    if not isinstance(feed_type, FeedType):
+        raise ValueError("feed_type must be a FeedType")
+
+    url = _FEED_URLS[feed_type]
+    total_attempts = 1 + len(retry_delays)
+    final_failure: Optional[FetchFailure] = None
+
+    for attempt_count in range(1, total_attempts + 1):
+        logger.info("Fetching %s feed, attempt %s/%s", feed_type.value, attempt_count, total_attempts)
+        retryable = True
+        try:
+            response = request_get(url, timeout=timeout_seconds)
+            status_code = response.status_code
+            if status_code >= 400:
+                final_failure = FetchFailure(
+                    kind=FetchFailureKind.HTTP,
+                    message=f"IMS returned HTTP {status_code}",
+                    status_code=status_code,
+                )
+                retryable = status_code >= 500
+            else:
+                xml = _decode_xml(response.content)
+                return FetchResult(
+                    feed_type=feed_type,
+                    url=url,
+                    attempt_count=attempt_count,
+                    xml=xml,
+                )
+        except requests.exceptions.Timeout as error:
+            final_failure = FetchFailure(
+                FetchFailureKind.TIMEOUT,
+                f"IMS request timed out: {error}",
+            )
+        except requests.exceptions.ConnectionError as error:
+            final_failure = FetchFailure(
+                FetchFailureKind.CONNECTION,
+                f"Could not connect to IMS: {error}",
+            )
+        except requests.exceptions.RequestException as error:
+            final_failure = FetchFailure(
+                FetchFailureKind.REQUEST,
+                f"IMS request failed: {error}",
+            )
+        except UnicodeError as error:
+            final_failure = FetchFailure(
+                FetchFailureKind.DECODE,
+                f"IMS response could not be decoded: {error}",
+            )
+
+        if not retryable or attempt_count == total_attempts:
+            assert final_failure is not None
+            return FetchResult(
+                feed_type=feed_type,
+                url=url,
+                attempt_count=attempt_count,
+                failure=final_failure,
+            )
+
+        delay = retry_delays[attempt_count - 1]
+        logger.info("Waiting %s seconds before retry", delay)
+        sleep(delay)
+
+    raise AssertionError("fetch retry loop did not return")
+
+
+def _decode_xml(content: bytes) -> str:
+    declaration = re.search(
+        br"<\?xml[^>]*encoding\s*=\s*['\"]([^'\"]+)['\"]",
+        content[:256],
+        flags=re.IGNORECASE,
+    )
+    declared_encoding: Optional[str] = None
+    if declaration:
+        label = declaration.group(1).decode("ascii", errors="ignore").lower()
+        declared_encoding = _ENCODING_ALIASES.get(label)
+        if declared_encoding is None:
+            raise UnicodeError(f"unsupported XML encoding declaration {label!r}")
+
+    candidates = list(_DECODING_ORDER)
+    if declared_encoding is not None:
+        candidates.remove(declared_encoding)
+        candidates.insert(0, declared_encoding)
+
+    failures = []
+    for encoding in candidates:
+        try:
+            return content.decode(encoding)
+        except UnicodeDecodeError as error:
+            failures.append(f"{encoding}: {error.reason}")
+
+    raise UnicodeError("; ".join(failures))
+
+
+# Temporary Slice 2 compatibility wrappers. Slice 2B removes these names after
+# parser/manual entry points adopt FetchResult directly. They delegate all real
+# work to fetch_feed; no second retry or decoding implementation exists.
 def fetch_country_forecast() -> Optional[str]:
-    """
-    Fetch the country-wide weather forecast XML from IMS.
-    
-    This XML contains:
-    - General weather description for Israel (Hebrew and English)
-    - Multi-day forecast text
-    - Any active weather warnings
-    
-    Returns:
-        XML content as a string, or None if fetch fails after all retries
-    """
-    logger.info("Fetching country forecast from IMS...")
-    return fetch_with_retry(COUNTRY_FORECAST_URL)
+    return fetch_feed(FeedType.COUNTRY).xml
 
 
 def fetch_cities_forecast() -> Optional[str]:
-    """
-    Fetch the per-city weather forecast XML from IMS.
-    
-    This XML contains forecast data for 15 Israeli cities:
-    - Temperature (min/max)
-    - Weather code (maps to condition and icon)
-    - Humidity
-    - Wind direction and speed
-    
-    Returns:
-        XML content as a string, or None if fetch fails after all retries
-    """
-    logger.info("Fetching cities forecast from IMS...")
-    return fetch_with_retry(CITIES_FORECAST_URL)
+    return fetch_feed(FeedType.CITIES).xml
 
 
 def fetch_with_retry(url: str, retries: int = 3) -> Optional[str]:
-    """
-    Fetch a URL with automatic retry on failure.
-    
-    Implements the retry strategy from the project plan:
-    - Attempt 1: Immediate
-    - Attempt 2: After 30 seconds
-    - Attempt 3: After 60 seconds
-    
-    Args:
-        url: The URL to fetch
-        retries: Number of retry attempts (default: 3)
-    
-    Returns:
-        Response content as string (UTF-8 decoded), or None if all retries fail
-    """
-    for attempt in range(1, retries + 1):
-        try:
-            logger.debug(f"Fetch attempt {attempt}/{retries}: {url}")
-            
-            response = requests.get(url, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()  # Raises HTTPError for 4xx/5xx
-            
-            # Try multiple encodings for Hebrew content
-            # IMS sometimes sends data in Windows-1255 or ISO-8859-8
-            xml_content = None
-            for encoding in ['utf-8', 'windows-1255', 'iso-8859-8']:
-                try:
-                    xml_content = response.content.decode(encoding)
-                    logger.debug(f"Successfully decoded with {encoding}")
-                    break
-                except UnicodeDecodeError:
-                    continue
-            
-            if xml_content is None:
-                raise UnicodeDecodeError(
-                    'multiple', response.content, 0, len(response.content),
-                    'Could not decode with utf-8, windows-1255, or iso-8859-8'
-                )
-            
-            logger.info(f"Successfully fetched {len(xml_content)} bytes from IMS")
-            return xml_content
-            
-        except requests.exceptions.Timeout:
-            logger.warning(f"Attempt {attempt}: Request timed out after {REQUEST_TIMEOUT}s")
-            
-        except requests.exceptions.HTTPError as e:
-            logger.warning(f"Attempt {attempt}: HTTP error {e.response.status_code}: {e}")
-            
-        except requests.exceptions.ConnectionError as e:
-            logger.warning(f"Attempt {attempt}: Connection error: {e}")
-            
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Attempt {attempt}: Request failed: {e}")
-            
-        except UnicodeDecodeError as e:
-            logger.error(f"Attempt {attempt}: Failed to decode response as UTF-8: {e}")
-        
-        # Wait before next retry (if not the last attempt)
-        if attempt < retries:
-            delay = RETRY_DELAYS[attempt - 1] if attempt - 1 < len(RETRY_DELAYS) else 60
-            logger.info(f"Waiting {delay} seconds before retry...")
-            time.sleep(delay)
-    
-    # All retries failed
-    logger.error(f"Failed to fetch {url} after {retries} attempts")
-    return None
+    feed_type = _feed_type_for_url(url)
+    retry_count = max(retries - 1, 0)
+    delays = tuple((30, 60)[index] if index < 2 else 60 for index in range(retry_count))
+    return fetch_feed(feed_type, retry_delays=delays).xml
 
 
 def fetch_xml(url: str) -> Optional[str]:
-    """
-    Single fetch attempt (no retry).
-    
-    Useful for testing or when you want to handle retries yourself.
-    
-    Args:
-        url: The URL to fetch
-    
-    Returns:
-        XML content as string, or None on failure
-    """
-    try:
-        response = requests.get(url, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
-        return response.content.decode('utf-8')
-    except Exception as e:
-        logger.error(f"Failed to fetch {url}: {e}")
-        return None
+    return fetch_feed(_feed_type_for_url(url), retry_delays=()).xml
 
 
-# Allow running this module directly for quick testing
+def _feed_type_for_url(url: str) -> FeedType:
+    for feed_type, feed_url in _FEED_URLS.items():
+        if url == feed_url:
+            return feed_type
+    raise ValueError("Temporary fetch wrappers accept only the two IMS feed URLs")
+
+
 if __name__ == "__main__":
     print("Testing IMS XML fetch...")
-    print("-" * 50)
-    
-    # Test country forecast
-    country = fetch_country_forecast()
-    if country:
-        print(f"✓ Country forecast: {len(country)} bytes")
-        # Show first 200 chars as preview
-        print(f"  Preview: {country[:200]}...")
-    else:
-        print("✗ Failed to fetch country forecast")
-    
-    print()
-    
-    # Test cities forecast
-    cities = fetch_cities_forecast()
-    if cities:
-        print(f"✓ Cities forecast: {len(cities)} bytes")
-        print(f"  Preview: {cities[:200]}...")
-    else:
-        print("✗ Failed to fetch cities forecast")
+    for feed_type in FeedType:
+        result = fetch_feed(feed_type)
+        if result.succeeded:
+            print(f"{feed_type.value}: {len(result.xml or '')} characters")
+        else:
+            print(f"{feed_type.value}: {result.failure.message if result.failure else 'failed'}")

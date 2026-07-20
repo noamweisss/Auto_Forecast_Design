@@ -7,7 +7,7 @@ changing data handling.
 ```text
 main (application boundary)
   -> paths -> repository .env -> Israel clock -> logging -> validated settings
-  -> data: fetch, archive, parse, validate
+  -> data: structured fetch -> validated snapshot -> atomic store -> parse
   -> design: render-ready names, positions, and icon choices
   -> rendering: Jinja HTML/CSS + Playwright PNG screenshot
   -> delivery: save the finished image
@@ -42,9 +42,24 @@ value as an ordinary keyword argument. There is no global settings singleton.
 
 `src/data/snapshots.py` names the two feed types and three possible sources, and
 defines immutable records for source XML facts and parsed forecast provenance.
-Forecast models temporarily allow optional provenance. This is a migration
-bridge only: Slice 2 still needs to extract metadata, select valid archives,
-populate provenance, and enforce truthful fallback behavior.
+A snapshot is a sealed, time-stamped copy of one IMS feed. Its factory verifies
+the expected feed root, the IMS issue time, every advertised forecast date, and
+the aware fetch time before assigning a deterministic ID.
+
+`src/data/fetcher.py` returns either decoded XML or a structured failure. Tests
+inject the HTTP and sleep functions, so retries, encoding, and failure reasons
+are exercised without network calls or real waiting.
+
+`src/data/archive.py` stores each validated snapshot as its own UTF-8 JSON
+envelope and publishes it atomically. Lookup uses the stored feed, fetch time,
+and exact forecast-date set; filenames do not decide whether a record is useful.
+Legacy date-named XML files are ignored because they lack trustworthy issue and
+fetch metadata.
+
+These checks establish trustworthy source history only. Storing a snapshot does
+not mean every country or city value is publishable. Forecast models still allow
+optional provenance as a migration bridge; Slice 2B must connect selected
+snapshots to parsing and enforce value/provenance truthfulness.
 
 ## Import safety
 
@@ -56,10 +71,11 @@ current working directory.
 
 ## Current boundary
 
-Slice 1 makes time, configuration, and source vocabulary explicit without
-changing fallback selection. Two audit defects remain visible as strict
+Slice 2A validates acquisition and snapshot storage without changing parser
+fallback or value behavior. Two audit defects remain visible as strict
 temporary expected failures: F-02 chooses the first fallback date from
 multi-date XML, and F-03 can silently return fewer than the configured 15
 cities after invalid optional data. The renderer and end-to-end workflow remain
-placeholders. Slice 2 should fix those parser contracts and populate truthful
-snapshot/fallback provenance before an image pipeline is connected.
+placeholders. Slice 2B should fix those parser contracts, consume validated
+snapshot candidates, and populate truthful fallback provenance before an image
+pipeline is connected.
