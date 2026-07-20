@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the complete RTL 1080x1920 Story HTML/CSS and a deterministic Jinja +
+  Playwright renderer that returns validated PNG bytes and reports failures by
+  template, browser, asset, font, layout, screenshot, or PNG stage.
+- Added structural and real-Chromium renderer tests, including physical city,
+  map, description, logo, font, image, bidi, repeatability, and failure checks.
+- Added an ignored frozen-reference visual diagnostic helper that writes a
+  render, 50/50 overlay, amplified difference, and metrics for human review.
+- Added a pull-request `render-smoke` CI job that hydrates Git LFS assets,
+  installs Chromium, and runs the browser-marked renderer tests without skips.
 - Added a frozen 1080x1920 Figma Story export, its sanitized matching forecast
   fixture, exact source/asset hashes, and an offline visual-review guide.
 - Added a test-only fixture builder that turns the sanitized reference JSON

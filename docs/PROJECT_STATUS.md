@@ -7,9 +7,10 @@ after a long gap. It separates executable code from plans and placeholders.
 
 ## The short version
 
-The project has a useful data foundation, but it does not yet generate a
-forecast image. The next milestone is one correct local 1080x1920 image made
-from real IMS data. Email and scheduled automation come later.
+The project can turn one validated Story packing list into a checked 1080x1920
+PNG. It still does not run the full path from real IMS data through rendering
+and saving. That one local real-data image is the next milestone; email and
+scheduled automation come later.
 
 ## Layer-by-layer state
 
@@ -25,35 +26,37 @@ from real IMS data. Email and scheduled automation come later.
 | Design assets | Validated | The complete SVG map/logos, 23 catalog-selected icons, and Black/SemiBold fonts are checked before rendering. |
 | Story render context | Implemented | One frozen packing list supplies exact header text, 15 physical city positions, temperatures, icon/file URIs, and fallback state. |
 | Frozen visual reference | Available | A verified 1080x1920 Figma export, sanitized matching forecast, and exact metadata/hashes provide an offline target without live Figma access. |
-| HTML/CSS template | Placeholder | The 1080x1920 canvas exists, but it contains placeholder text rather than the design. |
-| Playwright renderer | Placeholder | `TemplateRenderer.render()` raises `NotImplementedError`. |
+| HTML/CSS template | Implemented | Literal RTL HTML/CSS reproduces the frozen Story geometry with physical top-left city coordinates and committed local assets. |
+| Playwright renderer | Implemented | A strict Jinja render becomes a checked 1080x1920 PNG; browser, page, asset, font, layout, screenshot, and PNG failures are actionable. |
 | Image saving | Implemented | Pillow images can be saved as JPEG and PNG. |
 | Email delivery | Placeholder | Configuration validation exists, but message construction and sending are stubs. |
 | Main workflow | Placeholder | `python -m src.main` explains the intended flow but does not run it. |
-| Automation | Not started | `.github/workflows/` contains no production workflow. |
+| Automation | Partial | Pull requests run offline tests plus a real-Chromium render smoke job. No daily production workflow exists. |
 
 ## Verification snapshot
 
-On 2026-07-20, the offline suite passed 181 tests with no expected failures.
+On 2026-07-20, the full suite passed 197 tests with no expected failures.
 The normal passing regressions for F-02 and F-03 prove exact-date fallback and
 complete 15-city output. The run used the isolated audit environment and a
-writable pytest temporary directory. Rendering output was not inspected because
-the application still does not implement HTML/CSS or screenshots. The frozen
-reference export itself was rechecked at normal size, and its dimensions,
-bytes, SHA-256, matching fixture, and local asset hashes are enforced offline.
+writable pytest temporary directory, including 8 browser tests with installed
+Chromium. The frozen reference, rendered PNG, overlay, and amplified difference
+were inspected at normal size. The visual gate passed: canvas, orientation,
+map, logos, city relationships, Hebrew, numeric bidi, and hierarchy had no hard
+blocker. Small glyph and SVG edge differences were accepted as cross-engine
+antialiasing. Reference dimensions, bytes, SHA-256, matching fixture, and local
+asset hashes remain enforced offline.
 The Story deliberately uses Figma's visible Hebrew label `תל אביב` for city
 402. Its stable ID, `tel_aviv` internal key, English/source identity
 `Tel Aviv - Yafo`, and IMS forecast data remain unchanged.
 
 ## Recommended next milestone
 
-Produce one real local image before building email or scheduling:
+Produce one real-data local image before building email or scheduling:
 
-1. Turn `forecast_story.html` and `.css` into the real RTL design using the
-   committed tokens and assets.
-2. Implement `TemplateRenderer.render()` with Jinja2 and Playwright.
-3. Connect the existing data pipeline to the renderer for one date.
-4. Inspect the resulting 1080x1920 image at normal size against the frozen
+1. Connect the existing data pipeline to the renderer for one explicit date.
+2. Pass the returned PNG into the existing local image-saving boundary.
+3. Run that orchestration from `python -m src.main` without email or scheduling.
+4. Inspect the resulting 1080x1920 real-data image at normal size against the frozen
    reference.
 
 This is intentionally one product milestone rather than a request to finish the
@@ -68,6 +71,8 @@ The repository now keeps remote work reproducible through:
 - `.env.example` with names only and no credentials.
 - Git LFS rules plus setup/CI hydration checks for fonts and binary design
   assets.
+- A pull-request render-smoke job that installs Chromium and cannot silently
+  skip browser-marked renderer tests.
 - Ignore rules for generated forecasts, fetched XML, credentials, caches, local
   environments, private journals, and machine-specific agent files.
 
@@ -88,10 +93,11 @@ uses the verified 1080x1920 canvas, keeps all city x/y coordinates physical
 from the top-left (never RTL-mirrored), formats the exact Hebrew-calendar
 header, and refuses missing or unhydrated local assets before a browser opens.
 The repository now also carries the exact Figma node `1:2` export and matching
-sanitized mock forecast as an offline visual oracle. This makes layout work
-reproducible without claiming that the mock values are a real IMS forecast.
-Rendering is still unimplemented. See [Architecture](ARCHITECTURE.md) for the
-current boundary.
+sanitized mock forecast as an offline visual oracle. The checked renderer uses
+that context to produce deterministic PNG bytes and refuses incomplete browser
+state, assets, fonts, or geometry. This makes layout work reproducible without
+claiming that the mock values are a real IMS forecast. The remaining boundary
+is application orchestration. See [Architecture](ARCHITECTURE.md).
 
 ## Source-of-truth order
 

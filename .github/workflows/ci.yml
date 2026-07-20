@@ -24,3 +24,27 @@ jobs:
         run: python -m pip install -r requirements.txt
       - name: Run offline test suite
         run: python -m pytest tests -q -p no:cacheprovider
+
+  render-smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Verify hydrated Git LFS assets
+        run: git lfs fsck
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Install Playwright Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Render Story in Chromium
+        run: >-
+          python -m pytest tests/test_template_renderer.py
+          -q -p no:cacheprovider -m browser

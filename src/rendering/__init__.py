@@ -1,17 +1,6 @@
-"""
-Rendering Package - Image Generation
+"""Checked HTML/CSS and Playwright rendering for IMS forecast images."""
 
-This package handles all image generation using Pillow:
-- Base renderer class (abstract template for layouts)
-- Layout-specific renderers (Instagram Story, etc.)
-- Hebrew text utilities (RTL rendering)
-- Reusable visual components
+from src.rendering.template_renderer import TemplateRenderer, TemplateRenderError
 
-Modules:
-    base_renderer.py    - Abstract base class for all layouts
-    instagram_story.py  - 1080x1920 Instagram Story layout
-    text_utils.py       - Hebrew text handling utilities
 
-Directory:
-    components/         - Reusable visual components (future)
-"""
+__all__ = ["TemplateRenderError", "TemplateRenderer"]

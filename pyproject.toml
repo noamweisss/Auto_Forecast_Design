@@ -1,6 +1,9 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:cacheprovider"
+markers = [
+    "browser: requires the installed Playwright Chromium browser",
+]
 
 [tool.ruff]
 target-version = "py311"

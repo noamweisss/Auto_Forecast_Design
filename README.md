@@ -3,8 +3,8 @@
 An in-progress system for generating daily, branded weather-forecast images for
 the Israel Meteorological Service (IMS) media team.
 
-> **Current status:** the IMS data pipeline is implemented. The HTML/CSS +
-> Playwright image renderer and the end-to-end command are not implemented yet.
+> **Current status:** the IMS data pipeline and checked HTML/CSS + Playwright
+> PNG renderer are implemented. The end-to-end command is not implemented yet.
 
 ## What this project is for
 
@@ -31,12 +31,17 @@ and debuggability matter more than clever abstractions.
 - JPEG/PNG saving and old-output cleanup.
 - Automated tests for the implemented data and file-saving layers.
 - Committed Figma-derived design tokens, fonts, logos, map, and weather icons.
+- A validated Story render context plus the complete 1080x1920 RTL HTML/CSS design.
+- A deterministic Playwright renderer that rejects missing assets, fonts, browser
+  errors, wrong layout geometry, and invalid PNG output.
+- A frozen reference fixture and ignored visual-comparison helper for normal-size
+  design review.
 
 ## What is unfinished
 
 - `python -m src.main` only prints a placeholder explanation.
-- `TemplateRenderer.render()` does not render HTML or take a screenshot.
-- The forecast HTML/CSS contains placeholder content.
+- The implemented data pipeline, renderer, and image saver are not connected by
+  one application workflow yet.
 - Several design-token and icon-description helpers are stubs.
 - Email delivery is not implemented.
 - No daily GitHub Actions workflow exists.
@@ -96,6 +101,15 @@ python -m src.main
 ```
 
 It does **not** generate a forecast image yet.
+
+Renderer work can create the ignored frozen-reference diagnostics with:
+
+```bash
+python -m tests.story_visual
+```
+
+Open the resulting files under `test-results/story-visual/` at normal size;
+their metrics support human review and are not a pass/fail similarity score.
 
 ## Codex cloud setup
 

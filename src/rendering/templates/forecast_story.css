@@ -1,32 +1,209 @@
-/* 
-  forecast_story.css
-  This file will contain the CSS rules that mirror the Figma design tokens.
-  The styling is applied to forecast_story.html before taking the screenshot.
-*/
-
 :root {
-    /* Design Tokens will be loaded here */
-    --canvas-width: 1080px;
-    --canvas-height: 1920px;
-    --bg-gradient-start: #DCFF57;
-    --bg-gradient-end: #22B2FF;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  animation: none !important;
+  caret-color: transparent !important;
+  transition: none !important;
+}
+
+html,
+body {
+  width: 1080px;
+  height: 1920px;
+  margin: 0;
+  overflow: hidden;
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    background-color: #333; /* Dark background so the canvas stands out if viewed in browser */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+  background: transparent;
 }
 
-.canvas {
-    width: var(--canvas-width);
-    height: var(--canvas-height);
-    background: linear-gradient(-23deg, var(--bg-gradient-start) 62%, var(--bg-gradient-end) 112%);
-    position: relative;
-    overflow: hidden;
-    /* This makes it 1080x1920 exactly, which Playwright will screenshot */
+#story-canvas {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  /* Figma's measured start is before the gradient line; CSS expresses it as negative. */
+  background: linear-gradient(
+    -23.2359406deg,
+    #dcff57 -62.599%,
+    #22b2ff 112.14%
+  );
+}
+
+#story-header {
+  position: absolute;
+  z-index: 4;
+  top: 57px;
+  left: 100px;
+  width: 880px;
+  height: 105px;
+  color: #fff;
+}
+
+#header-line {
+  display: flex;
+  width: 100%;
+  height: 90px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  direction: ltr;
+  font-family: "IMS Story Black", sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 28px;
+  white-space: nowrap;
+}
+
+#header-gregorian,
+#header-hebrew {
+  unicode-bidi: isolate;
+}
+
+#header-separator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 880px;
+  height: 7px;
+  background: #fff;
+}
+
+#story-map {
+  position: absolute;
+  z-index: 1;
+  top: 288.3px;
+  left: 258px;
+  width: 533.371px;
+  height: 1495.196px;
+  overflow: visible;
+}
+
+#israel-map {
+  position: absolute;
+  top: -10.8px;
+  left: -10.8px;
+  width: 555px;
+  height: 1517px;
+}
+
+#forecast-layer {
+  position: absolute;
+  z-index: 3;
+  top: 248px;
+  left: 128px;
+  width: 847px;
+  height: 1582px;
+}
+
+#country-description {
+  position: absolute;
+  top: 986px;
+  left: 851px;
+  width: 239px;
+  margin: 0;
+  transform: translateX(-100%);
+  font-family: "IMS Story SemiBold", sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 36px;
+  text-align: right;
+}
+
+#city-layer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  direction: ltr;
+}
+
+.city-marker {
+  position: absolute;
+  display: flex;
+  width: max-content;
+  padding: 10px;
+  gap: 16px;
+  direction: ltr;
+  align-items: center;
+}
+
+.city-icon {
+  order: 1;
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  flex: 0 0 50px;
+}
+
+.city-copy {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: #000;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.city-name {
+  font-family: "IMS Story Black", sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 24px;
+}
+
+.temperature {
+  margin-top: 0;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-family: "IMS Story SemiBold", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.layout-ltr .city-icon {
+  order: 2;
+}
+
+.layout-ltr .city-copy {
+  order: 1;
+}
+
+.layout-rtl .city-copy,
+.layout-ltr .city-copy {
+  transform: translateY(5px);
+}
+
+.layout-ttb {
+  flex-direction: column;
+  gap: 5px;
+}
+
+#logo-group {
+  position: absolute;
+  z-index: 3;
+  top: 1709px;
+  left: 633px;
+  display: flex;
+  direction: ltr;
+  gap: 24px;
+  align-items: center;
+}
+
+#mot-logo {
+  width: 199px;
+  height: 150px;
+}
+
+#ims-logo {
+  width: 119px;
+  height: 143px;
 }

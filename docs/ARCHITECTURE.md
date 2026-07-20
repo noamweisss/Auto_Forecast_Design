@@ -45,7 +45,7 @@ ordinary keyword argument. There is no global settings singleton.
 the fixed canvas size, and the 15 city positions. Each x/y value is a physical
 coordinate measured from the top-left of the Story. An `RTL` label changes text
 flow later; it never mirrors that coordinate. Gradient, typography, spacing,
-and logo geometry belong directly in the future CSS, not in a Python token
+and logo geometry belong directly in the CSS, not in a Python token
 service.
 
 `config/00_ims_weather_codes.json` is the one catalog for supported Israel
@@ -64,8 +64,31 @@ files and Git LFS pointer text fail here, before a browser opens.
 
 The header retains separate bidi-safe fields: numeric Gregorian text such as
 `17/11/2025` and a Pyluach-derived Hebrew-calendar field such as
-`כ״ו בחשוון התשפ״ו`. Slice 4 can isolate those runs while displaying the single
+`כ״ו בחשוון התשפ״ו`. The template isolates those runs while displaying the single
 verified Figma line.
+
+## Checked Story renderer
+
+The render context is a packing list: it contains only validated text,
+coordinates, and absolute local asset addresses. Strict Jinja inserts that list
+into `forecast_story.html`, while the included CSS arranges it on one literal
+1080x1920 canvas. Chromium paints only that canvas, and `TemplateRenderer`
+returns the resulting PNG bytes.
+
+This is a checked browser screenshot rather than an unchecked print command.
+Collectors are active before navigation; both committed fonts and every image
+must decode; the canvas and page geometry must be exact; and Pillow verifies the
+finished PNG. Template, temporary-file, browser, page, asset, font, layout,
+screenshot, and image-format failures identify their stage. A temporary `file:`
+page keeps all work local and is removed after success or failure.
+
+The page is globally RTL, but Figma's city, map, description, and logo x/y
+values are physical coordinates from the canvas top-left. CSS therefore uses
+literal `left` and `top` for those elements and explicit flex child order for
+RTL, LTR, and top-to-bottom city groups. The map wrapper describes the SVG's
+inner visible path; the unmodified 555x1517 SVG viewport is offset by 10.8px.
+Figma's gradient start lies before the measured gradient line, so the equivalent
+CSS stop is `-62.599%` rather than a positive on-canvas stop.
 
 ## Offline visual reference
 
@@ -78,12 +101,17 @@ It is deliberately not described as a real IMS forecast.
 Tests can build that JSON into the real `DailyForecast` and
 `StoryRenderContext`, so renderer work can compare like with like without IMS,
 Figma, credentials, or another network service. The PNG is the frozen target
-appearance; future HTML/CSS is the editable implementation source.
+appearance; HTML/CSS is the editable implementation source.
 
 The automated contracts guard exact bytes, dimensions, provenance metadata,
 fixture content, and hydrated asset hashes. They do not replace human visual
 review. After renderer changes, the actual 1080x1920 output must still be
 opened at normal size and compared with the reference.
+
+`python -m tests.story_visual` writes one ignored render, 50/50 overlay,
+amplified pixel difference, and JSON metrics under `test-results/story-visual/`.
+Those files help a human find discrepancies; no similarity number replaces the
+normal-size visual gate.
 
 ## Snapshots and provenance
 
@@ -132,8 +160,8 @@ current working directory.
 ## Current boundary
 
 The data layer fetches, seals, stores, and parses exact-date snapshots into one
-complete provenance-backed forecast. The design layer now validates and packs
-that forecast for a future Story template, and the frozen offline reference
-package provides the exact visual target and matching mock context. The
-HTML/CSS renderer and end-to-end workflow remain unfinished; `src/main.py`
-still does not run this data path.
+complete provenance-backed forecast. The design layer validates and packs that
+forecast; the HTML/CSS and checked Chromium renderer produce PNG bytes; and the
+frozen offline package provides the exact visual target and matching mock
+context. The end-to-end application workflow remains unfinished: `src/main.py`
+still does not connect data, rendering, and saving.

@@ -27,9 +27,9 @@ may be stale.
 - Data models, IMS XML fetching, parsing, archiving, and image file saving are
   implemented and covered by tests.
 - `src/main.py` is still a placeholder; it does not run the advertised pipeline.
-- The HTML/CSS template and `TemplateRenderer.render()` are placeholders.
-- The validated Story render context, weather catalog, physical city positions,
-  Hebrew-calendar header, and required local assets are ready for a future template.
+- The validated Story render context, HTML/CSS template, and checked Playwright
+  PNG renderer are implemented and covered by structural and browser tests.
+- The data, renderer, and saver are not connected by one application workflow yet.
 - Email delivery still contains stubs.
 - No production GitHub Actions workflow exists yet.
 - Figma-derived tokens and local design assets are committed, so ordinary work

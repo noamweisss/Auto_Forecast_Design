@@ -83,6 +83,18 @@ def test_reference_png_is_exact_hydrated_export_and_runners_hydrate_lfs():
     )
 
 
+def test_pull_requests_run_unskippable_browser_render_smoke_job():
+    ci_text = CI_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "  render-smoke:" in ci_text
+    assert "if: github.event_name == 'pull_request'" in ci_text
+    assert "python -m playwright install --with-deps chromium" in ci_text
+    assert "python -m pytest tests/test_template_renderer.py" in ci_text
+    assert "-m browser" in ci_text
+    assert 'CI: "true"' in ci_text
+    assert "continue-on-error" not in ci_text
+
+
 def test_metadata_identifies_exact_figma_source_export_and_fixture():
     metadata = _metadata()
 

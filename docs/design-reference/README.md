@@ -38,8 +38,10 @@ the complete offline reference.
 
 ## What may differ
 
-When rendering the matching reference fixture, no differences are allowed
-without updating this package as an explicit design decision.
+When rendering the matching reference fixture, no differences in design
+geometry or content are allowed without updating this package as an explicit
+design decision. Small browser-versus-Figma glyph and vector antialiasing may be
+accepted only after the normal-size visual gate.
 
 When deliberately rendering another forecast, only content may differ:
 
@@ -52,6 +54,17 @@ RTL/LTR/TTB relationships remain governed by this reference.
 
 Passing tests is not visual acceptance. After any renderer or CSS change, open
 the full 1080x1920 result and inspect it at normal size against this PNG.
+
+Generate the standard ignored comparison aids with:
+
+```bash
+python -m tests.story_visual
+```
+
+This writes only `rendered.png`, `overlay.png`,
+`difference-amplified.png`, and `metrics.json` under
+`test-results/story-visual/`. The metrics help locate changes; they are not an
+automatic visual-acceptance threshold.
 
 ## Deliberately refreshing the reference
 
