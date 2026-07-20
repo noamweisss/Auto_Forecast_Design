@@ -258,7 +258,7 @@ def test_default_template_resolution_does_not_depend_on_cwd(
     rendered = _render_html(story_context)
 
     assert 'id="story-canvas"' in rendered
-    assert str(PATHS.root) not in rendered
+    assert tmp_path.as_uri() not in rendered
 
 
 @pytest.mark.browser
