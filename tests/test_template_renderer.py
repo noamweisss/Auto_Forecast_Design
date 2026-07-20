@@ -334,6 +334,22 @@ def test_wrong_canvas_size_is_rejected(
 
 
 @pytest.mark.browser
+def test_country_description_that_reaches_branding_is_rejected(
+    story_context, chromium_browser
+):
+    context = replace(
+        story_context,
+        country_description_hebrew=("תחזית ארוכה במיוחד " * 80).strip(),
+    )
+
+    with pytest.raises(
+        template_renderer.TemplateRenderError,
+        match=r"layout validation: country description.*(overflow|branding)",
+    ):
+        template_renderer.TemplateRenderer().render(context)
+
+
+@pytest.mark.browser
 def test_browser_launch_failure_identifies_stage(story_context, chromium_browser):
     renderer = template_renderer.TemplateRenderer(
         launch_options={"executable_path": "definitely-missing-chromium"}

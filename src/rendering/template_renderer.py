@@ -230,6 +230,25 @@ class TemplateRenderer:
                   viewportHeight: document.documentElement.clientHeight,
                 })"""
             )
+            content_fit = page.evaluate(
+                """() => {
+                  const description = document.querySelector("#country-description");
+                  const branding = document.querySelector("#logo-group");
+                  if (!description || !branding) return null;
+                  const descriptionBox = description.getBoundingClientRect();
+                  const brandingBox = branding.getBoundingClientRect();
+                  return {
+                    description: {
+                      bottom: descriptionBox.bottom,
+                      clientHeight: description.clientHeight,
+                      clientWidth: description.clientWidth,
+                      scrollHeight: description.scrollHeight,
+                      scrollWidth: description.scrollWidth,
+                    },
+                    brandingTop: brandingBox.top,
+                  };
+                }"""
+            )
         except PlaywrightError as error:
             raise TemplateRenderError(f"layout validation: {error}") from error
 
@@ -253,6 +272,20 @@ class TemplateRenderer:
             raise TemplateRenderError(
                 f"layout validation: unexpected page scroll geometry {page_size}"
             )
+        if content_fit is not None:
+            description = content_fit["description"]
+            if (
+                description["scrollHeight"] > description["clientHeight"]
+                or description["scrollWidth"] > description["clientWidth"]
+            ):
+                raise TemplateRenderError(
+                    "layout validation: country description overflowed its "
+                    "reserved design area"
+                )
+            if description["bottom"] > content_fit["brandingTop"]:
+                raise TemplateRenderError(
+                    "layout validation: country description reached the branding"
+                )
         return canvas
 
     def _validate_png(self, png_bytes: bytes) -> None:

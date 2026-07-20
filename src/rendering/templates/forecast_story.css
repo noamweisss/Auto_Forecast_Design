@@ -107,6 +107,9 @@ body {
   top: 986px;
   left: 851px;
   width: 239px;
+  /* Thirteen 36px lines end 7px before the branding begins. */
+  max-height: 468px;
+  overflow: hidden;
   margin: 0;
   transform: translateX(-100%);
   font-family: "IMS Story SemiBold", sans-serif;

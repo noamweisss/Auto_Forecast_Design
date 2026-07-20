@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
       - name: Run offline test suite
-        run: python -m pytest tests -q -p no:cacheprovider
+        run: python -m pytest tests -q -p no:cacheprovider -m "not browser"
 
   render-smoke:
     if: github.event_name == 'pull_request'
