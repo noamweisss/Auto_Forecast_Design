@@ -74,7 +74,7 @@ def main():
     print("IMS Daily Forecast Generator")
     print("=" * 60)
     print()
-    print("🚧 This is a placeholder. Implementation coming soon!")
+    print("[placeholder] Implementation coming soon.")
     print()
     print("The workflow will be:")
     print("  1. Fetch XML data from IMS")
@@ -83,7 +83,7 @@ def main():
     print("  4. Save as JPEG + PNG")
     print("  5. Send via email")
     print()
-    print("See docs/00_initial_plan.md for the complete plan.")
+    print("See docs/PROJECT_STATUS.md for the verified project state.")
     print("=" * 60)
 
 

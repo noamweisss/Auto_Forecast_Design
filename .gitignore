@@ -1,50 +1,47 @@
+# Secrets and machine-specific environment files
+.env
+.env.*
+!.env.example
 
-# Ignore the logs directory and all its contents
-logs/
-
-# Ignore AI agent directories
-.gemini/
-.claude/
-GEMINI.md
-CLAUDE.md
-
-# Ignore environment variable files
-.env    
-
-# Ignore Internal Dev Docs
-docs/internal/
-
-# ===== New additions for project structure =====
-
-# Generated output files (images)
-output/
-
-# XML archive (backup data)
-archive/
-
-# Python cache files
+# Local Python environments and caches
+.venv/
+venv/
+env/
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
 .Python
-
-# Virtual environment
-venv/
-.venv/
-env/
-
-# pytest cache
 .pytest_cache/
-
-# Coverage reports
-htmlcov/
 .coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
 
+# Generated forecast data and test artifacts
+archive/
+output/
+logs/
+tests/manual/output/
+test-results/
+playwright-report/
+blob-report/
 
-Auto_Forecast_Design.code-workspace
-
-
-
+# Private notes and local experiments
+docs/internal/
 _experiments/
 
+# Local/legacy agent state. Shared instructions belong in AGENTS.md.
+.claude/
+.gemini/
+CLAUDE.md
+GEMINI.md
+
+# Editor and operating-system files
+*.code-workspace
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

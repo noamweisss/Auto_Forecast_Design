@@ -7,16 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a concise, repository-level `AGENTS.md` for local and Codex cloud work.
+- Added `docs/PROJECT_STATUS.md` as the verified implementation and restart map.
+- Added `scripts/setup_codex_cloud.sh` for Linux-based cloud setup.
+- Added a secret-free `.env.example` for future email configuration.
+
 ### Changed
 
+- Corrected README claims so unfinished rendering, email, and automation are
+  clearly distinguished from implemented data work.
+- Hardened Git ignore rules and documented Git LFS/publication boundaries.
+- Documented that the repository has no selected software license yet.
 - **Architecture Shift**: Rendering approach changed from Pillow (pixel drawing) to **HTML/CSS templates + Playwright screenshots**
   - Design now lives in HTML/CSS files that mirror the Figma layout — CSS maps nearly 1:1 to Figma properties
   - Hebrew RTL handled natively by the browser (`dir="rtl"`) — removed `python-bidi` and `arabic-reshaper` dependencies
   - Added `jinja2` and `playwright` as new dependencies
-  - Updated all project documentation: `GEMINI.md`, `CLAUDE.md`, `README.md`, `00_initial_plan.md`
+  - Updated the historical agent documentation and project plan used at the time
   - Old Pillow rendering stubs replaced with new file structure (`template_renderer.py`, `templates/`)
-
-### Added
 
 - **Data Pipeline (Phase 2)**: Complete implementation of weather data fetching, parsing, and archiving
   - `src/data/fetcher.py`: HTTP requests with retry logic (30s/60s delays) and multi-encoding support
@@ -25,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `src/data/models.py`: Added `internal_key` and `is_fallback` fields with validation
   - `src/delivery/file_saver.py`: Dual-format output (JPEG + PNG) with 30-day cleanup
 
-- **Test Suite**: 59 automated tests covering all data pipeline modules
+- **Test Suite**: Automated tests covering all data pipeline modules
   - `tests/test_fetcher.py`: Retry logic, timeout handling, Hebrew encoding
   - `tests/test_archive.py`: Save, fallback, cleanup functions
   - `tests/test_parser.py`: Country/city parsing, weather codes, fallback behavior
@@ -41,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - City name spelling consistency (Eilat not Elat, Ein Gedi not En Gedi)
 - XML encoding detection for IMS Hebrew content (Windows-1255 / ISO-8859-8)
 - XML declaration normalization for lxml parsing
+- Replaced an emoji in the placeholder entry point that crashed on some Windows
+  console encodings.
 
 ---
 

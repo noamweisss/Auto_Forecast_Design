@@ -1,3 +1,9 @@
+* text=auto
+
+# Cloud setup scripts must keep Unix line endings even when edited on Windows.
+*.sh text eol=lf
+
+# Binary design assets are stored with Git LFS.
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.jpeg filter=lfs diff=lfs merge=lfs -text

@@ -1,124 +1,144 @@
 # IMS Auto Forecast Design
 
-An automated system to generate and deliver daily weather forecast images for the Israel Meteorological Service (IMS) media team.
+An in-progress system for generating daily, branded weather-forecast images for
+the Israel Meteorological Service (IMS) media team.
 
-![Project Status](https://img.shields.io/badge/Status-Early_Development-orange)
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+> **Current status:** the IMS data pipeline is implemented. The HTML/CSS +
+> Playwright image renderer and the end-to-end command are not implemented yet.
 
-## About This Project
+## What this project is for
 
-**Created by Noam Weiss, IMS Media Team.**
+The goal is to replace a manual social-media production task with a clear,
+maintainable workflow:
 
-This project was born out of a need to automate the manual daily task of creating designed weather maps for our social media channels. However, it serves a dual purpose: it is also a personal learning journey.
+1. Fetch official IMS country and city forecast XML.
+2. Parse Hebrew forecast data into Python objects.
+3. Inject that data into an RTL HTML/CSS design.
+4. Capture a 1080x1920 image with Playwright.
+5. Save JPEG and PNG versions.
+6. Eventually deliver the result automatically.
 
-I am a designer by trade, not a professional developer. My background is in visual design and web concepts (HTML/CSS), and I approach this project with a "Design-First" mindset—thinking in terms of Figma frames, auto-layouts, and components.
+The project is design-first. Its maintainer works primarily in Figma, HTML, and
+CSS and is using this repository to learn software development, so readability
+and debuggability matter more than clever abstractions.
 
-**Built with AI Agents**
-This software is being built in collaboration with AI agents (Claude Code & Gemini CLI). Unlike my previous attempts where I let AI generate code blindly, this project is built on a strict philosophy: **"Clarity over Cleverness."** 
-*   I use AI to help bridge the gap between design concepts and Python logic.
-*   I review and understand every line of code to ensure I can debug and maintain it myself.
-*   We prioritize strict documentation and professional engineering standards to ensure the system is robust and educational.
+## What works today
 
-## Overview
+- IMS XML fetching with retries and Hebrew encoding fallbacks.
+- Parsing country and city forecasts into Python data models.
+- Weather-code and city configuration loading inside the parser.
+- Local XML archive and fallback helpers.
+- JPEG/PNG saving and old-output cleanup.
+- Automated tests for the implemented data and file-saving layers.
+- Committed Figma-derived design tokens, fonts, logos, map, and weather icons.
 
-The system runs automatically every morning via GitHub Actions to:
-1.  **Fetch** official weather forecast XML data from IMS servers.
-2.  **Render** a high-quality, branded weather map image (1080x1920 for Instagram Stories) using an HTML/CSS template (mirroring the Figma design) and Playwright for screenshot capture.
-3.  **Deliver** the generated image via email to the media team for distribution.
+## What is unfinished
 
-## Key Features
+- `python -m src.main` only prints a placeholder explanation.
+- `TemplateRenderer.render()` does not render HTML or take a screenshot.
+- The forecast HTML/CSS contains placeholder content.
+- Several design-token and icon-description helpers are stubs.
+- Email delivery is not implemented.
+- No daily GitHub Actions workflow exists.
 
-*   **Automated Data Fetching**: Retrieves `isr_country.xml` and `isr_cities.xml` from IMS.
-*   **Design-First Rendering**: Design lives in an HTML/CSS template that mirrors the Figma design system. Jinja2 injects forecast data, Playwright screenshots the result.
-*   **Hebrew Support**: Full RTL support handled natively by the browser via `dir="rtl"` — no manual BiDi libraries needed.
-*   **Resilience**: 7-day local archive of XML data for fallback if fetching fails.
-*   **Email Delivery**: SMTP integration to send results directly to the media team.
+See [Project Status](docs/PROJECT_STATUS.md) for the verified layer-by-layer map
+and the recommended restart point.
 
-## Tech Stack
+## Technology
 
-*   **Language**: Python 3.11+
-*   **Core Libraries**:
-    *   `Jinja2`: HTML template engine for injecting forecast data.
-    *   `Playwright`: Headless browser for HTML → image screenshots.
-    *   `Pillow`: Image format conversion (JPEG/PNG saving).
-    *   `lxml`: XML parsing.
-    *   `requests`: HTTP data fetching.
-*   **Automation**: GitHub Actions (Daily Cron).
+- Python 3.11+
+- `requests` and `lxml` for IMS data
+- Jinja2 for HTML templating
+- Playwright for browser screenshots
+- Pillow for image output
+- pytest for automated tests
 
-## Getting Started
+Hebrew layout is handled by the browser with `dir="rtl"`; the XML pipeline uses
+explicit encodings because the IMS feeds may not arrive as UTF-8.
 
-### Prerequisites
+## Local setup
 
-*   Python 3.11 or higher installed.
+Clone the repository, then create an isolated Python environment:
 
-### Installation
+```bash
+python -m venv .venv
+```
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/noamweiss/Auto_Forecast_Design.git
-    cd Auto_Forecast_Design
-    ```
+Activate it:
 
-2.  **Set up a virtual environment**:
-    ```bash
-    python -m venv venv
-    
-    # Windows
-    .\venv\Scripts\activate
-    
-    # macOS/Linux
-    source venv/bin/activate
-    ```
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+```
 
-3.  **Install dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
+```bash
+# macOS or Linux
+source .venv/bin/activate
+```
 
-4.  **Install Playwright's browser** (one-time setup):
-    ```bash
-    playwright install chromium
-    ```
+Install Python dependencies and Chromium:
 
-5.  **Configuration**:
-    *   Ensure `config/design_tokens.json` exists (contains Figma design values).
-    *   Create a `.env` file for secrets like email credentials.
+```bash
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+```
 
-### Usage
+Run the tests:
 
-To run the full forecast generation pipeline:
+```bash
+python -m pytest tests -q -p no:cacheprovider
+```
+
+The current entry point can be inspected with:
 
 ```bash
 python -m src.main
 ```
 
-By default, this will:
-1. Fetch the latest data.
-2. Generate the image.
-3. Save it to the `output/` directory.
-4. (Optionally) Send the email if configured.
+It does **not** generate a forecast image yet.
 
-### Running Tests
+## Codex cloud setup
 
-The project uses `pytest` for testing.
+Codex cloud needs only committed repository content; it cannot see this
+machine's `.env`, virtual environment, private notes, or local integrations.
 
-```bash
-python -m pytest tests/
-```
+In the Codex environment settings:
 
-To run with coverage:
+1. Select Python 3.11 or newer.
+2. Use this setup command:
 
-```bash
-python -m pytest tests/ --cov=src --cov-report=html
-```
+   ```bash
+   bash scripts/setup_codex_cloud.sh
+   ```
 
-## Documentation
+3. Leave agent internet access off unless a task specifically needs live IMS or
+   Figma access. The existing automated tests should not require the network.
+4. Add real credentials as environment settings only when email delivery is
+   implemented. Never commit them.
 
-*   [**Initial Project Plan**](docs/00_initial_plan.md): Comprehensive architecture and detailed goals.
-*   [**Folder Structure**](docs/01_folder_structure.md): Detailed map of the project layout.
-*   [**CLAUDE.md**](CLAUDE.md): AI Assistant context and development guidelines.
+The setup script installs Python dependencies and the Playwright Chromium
+browser while setup-time internet access is available.
+
+## Repository guidance
+
+- [AGENTS.md](AGENTS.md) is the durable guide for local and cloud coding agents.
+- [Project Status](docs/PROJECT_STATUS.md) is the current implementation map.
+- [Initial Plan](docs/00_initial_plan.md) is historical architecture context.
+- [Phase 2 Plan](docs/01_phase2_data_pipeline_plan.md) documents the data work.
+- [Folder Structure](docs/99_folder_structure.md) is a historical navigation aid.
+
+Historical plans can drift. Prefer current source code, tests, `AGENTS.md`, and
+the project-status page when they disagree.
+
+## Secrets, generated files, and assets
+
+- Copy `.env.example` to `.env` for future local email configuration.
+- `.env`, generated images, downloaded XML, logs, caches, and private internal
+  notes are intentionally ignored by Git.
+- Fonts and image assets are stored through Git LFS. Install Git LFS before
+  cloning if your Git client does not include it.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+No software license has been selected yet. Treat the repository as unlicensed
+unless the owner adds a `LICENSE` file.
