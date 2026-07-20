@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added sanitized, committed IMS XML fixtures, baseline asset contracts, and an offline pull-request CI workflow.
+- Added strict temporary characterization tests for parser defects F-02 and F-03; the defects remain unfixed.
+- Added modest Ruff and Mypy advisory configuration for Python 3.11.
 - Added `src/app_paths.py`, `docs/ARCHITECTURE.md`, and configuration contract tests as the first July 2026 refactor slice.
 - Added `pyproject.toml` with the default pytest command.
 

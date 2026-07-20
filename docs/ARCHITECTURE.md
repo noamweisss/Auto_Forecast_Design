@@ -27,7 +27,11 @@ they need an isolated temporary folder.
 
 ## Current boundary
 
-This refactor slice only establishes safe shared paths and configuration
-contracts. The parser and renderer are still separate, and the renderer/main
-workflow remain placeholders. The next data slice should make snapshot and
+Slice 0 establishes safe shared paths, sanitized production-shaped IMS fixtures,
+configuration and asset contracts, and offline PR CI. Its parser contracts keep
+two audit defects visible as strict temporary expected failures: F-02 chooses
+the first fallback date from multi-date XML, and F-03 can silently return fewer
+than the configured 15 cities after invalid optional data. The parser and
+renderer are still separate, and the renderer/main workflow remain placeholders.
+The next data slice should fix those parser contracts and make snapshot and
 fallback provenance explicit before connecting an image pipeline.

@@ -75,7 +75,13 @@ capabilities, not baseline assumptions.
 
 ## Refactor progress
 
-The July 2026 refactor has started with a small foundation slice: shared repository paths, pytest/tool configuration, and tests that keep city configuration aligned with the design positions. This does not yet fix parser fallback semantics or implement rendering. See [Architecture](ARCHITECTURE.md) for the current boundary.
+The July 2026 refactor now has a protected Slice 0 baseline: shared paths,
+offline IMS fixtures, configuration and asset contracts, advisory tool settings,
+and pull-request CI that runs the offline test suite. Parser defects F-02
+(multi-date fallback selection) and F-03 (incomplete forecasts after invalid
+optional city data) are strictly characterized as temporary expected failures;
+they remain unfixed. Rendering is still unimplemented. See
+[Architecture](ARCHITECTURE.md) for the current boundary.
 
 ## Source-of-truth order
 
