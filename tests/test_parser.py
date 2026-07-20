@@ -3,6 +3,7 @@
 from copy import deepcopy
 from dataclasses import replace
 from datetime import date, datetime, timezone
+from types import MappingProxyType
 
 from lxml import etree
 import pytest
@@ -150,6 +151,35 @@ def test_fixture_cities_are_complete_unique_and_in_settings_order(app_settings):
     assert all(city.provenance.fetched_at == snapshot.fetched_at for city in result)
     assert all(city.provenance.issued_at == snapshot.issued_at for city in result)
     assert all(city.provenance.source_forecast_date == TARGET_DATE for city in result)
+
+
+def _settings_without_one_city(app_settings):
+    cities = dict(app_settings.cities)
+    cities.pop(next(iter(cities)))
+    return replace(app_settings, cities=MappingProxyType(cities))
+
+
+def test_public_city_parser_rejects_settings_with_fourteen_cities(app_settings):
+    incomplete_settings = _settings_without_one_city(app_settings)
+
+    with pytest.raises(ForecastDataError, match="exactly 15 configured cities; found 14"):
+        parse_cities_forecast(
+            [_snapshot(FeedType.CITIES)],
+            TARGET_DATE,
+            settings=incomplete_settings,
+        )
+
+
+def test_daily_parser_reports_incomplete_settings_as_forecast_data_error(app_settings):
+    incomplete_settings = _settings_without_one_city(app_settings)
+
+    with pytest.raises(ForecastDataError, match="exactly 15 configured cities; found 14"):
+        parse_daily_forecast(
+            [_snapshot(FeedType.COUNTRY)],
+            [_snapshot(FeedType.CITIES)],
+            TARGET_DATE,
+            settings=incomplete_settings,
+        )
 
 
 def test_candidate_with_only_another_date_is_not_relabelled(app_settings):

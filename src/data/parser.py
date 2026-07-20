@@ -80,6 +80,7 @@ def parse_cities_forecast(
     unavailable_reason: str | None = None,
 ) -> list[CityForecast]:
     """Resolve every configured city independently from exact-date candidates."""
+    expected_ids = _require_complete_city_settings(settings)
     candidates = _candidate_roots(snapshots, FeedType.CITIES, target_date)
     resolved: list[CityForecast] = []
     unresolved: list[str] = []
@@ -108,9 +109,13 @@ def parse_cities_forecast(
             unresolved.append(city_id)
             rejection_details[city_id] = city_rejections
 
-    expected_ids = list(settings.cities)
     actual_ids = [city.city_id for city in resolved]
-    if unresolved or actual_ids != expected_ids or len(set(actual_ids)) != len(actual_ids):
+    if (
+        unresolved
+        or len(actual_ids) != 15
+        or actual_ids != expected_ids
+        or len(set(actual_ids)) != len(actual_ids)
+    ):
         duplicate_text = f", duplicate candidate IDs={sorted(duplicate_ids)}" if duplicate_ids else ""
         detail_text = "; ".join(
             f"{city_id}: {', '.join(details) or 'no exact-date candidate'}"
@@ -132,6 +137,7 @@ def parse_daily_forecast(
     feed_failure_reasons: Mapping[FeedType, str] | None = None,
 ) -> DailyForecast:
     """Build the complete daily object after each feed resolves independently."""
+    configured_ids = _require_complete_city_settings(settings)
     reasons = feed_failure_reasons or {}
     country = parse_country_forecast(
         country_snapshots,
@@ -144,7 +150,6 @@ def parse_daily_forecast(
         settings=settings,
         unavailable_reason=reasons.get(FeedType.CITIES),
     )
-    configured_ids = list(settings.cities)
     actual_ids = [city.city_id for city in cities]
     if actual_ids != configured_ids:
         raise ForecastDataError(
@@ -156,6 +161,16 @@ def parse_daily_forecast(
         country_forecast=country,
         city_forecasts=cities,
     )
+
+
+def _require_complete_city_settings(settings: AppSettings) -> list[str]:
+    city_ids = list(settings.cities)
+    if len(city_ids) != 15:
+        raise ForecastDataError(
+            "Forecast parsing requires exactly 15 configured cities; "
+            f"found {len(city_ids)}"
+        )
+    return city_ids
 
 
 def _candidate_roots(

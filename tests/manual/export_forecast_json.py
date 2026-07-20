@@ -2,7 +2,9 @@
 
 import json
 import sys
+from datetime import date, datetime
 from pathlib import Path
+from typing import Callable
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -10,12 +12,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.app_paths import AppPaths  # noqa: E402
 from src.clock import SystemClock  # noqa: E402
 from src.data.archive import SnapshotStore  # noqa: E402
-from src.data.fetcher import fetch_feed  # noqa: E402
+from src.data.fetcher import FetchResult, fetch_feed  # noqa: E402
 from src.data.parser import ForecastDataError, parse_daily_forecast  # noqa: E402
 from src.data.snapshots import (  # noqa: E402
     FeedType,
     ForecastProvenance,
+    ForecastSnapshot,
     SnapshotSource,
+    SnapshotValidationError,
     build_snapshot,
 )
 from src.settings import load_settings  # noqa: E402
@@ -77,33 +81,55 @@ def forecast_to_dict(forecast, generated_at) -> dict:
     }
 
 
+def acquire_feed_candidates(
+    feed_type: FeedType,
+    target_date: date,
+    *,
+    now: datetime,
+    store: SnapshotStore,
+    fetch: Callable[[FeedType], FetchResult] = fetch_feed,
+) -> tuple[list[ForecastSnapshot], str | None]:
+    """Return live-first candidates, preserving archives when live XML is invalid."""
+    archived = list(store.find_for_date(feed_type, target_date, as_of=now))
+    result = fetch(feed_type)
+    if result.xml is None:
+        failure = result.failure
+        reason = failure.message if failure is not None else "IMS feed unavailable"
+        return archived, reason
+
+    try:
+        live = build_snapshot(
+            result.xml,
+            feed_type,
+            source=SnapshotSource.LIVE,
+            fetched_at=now,
+        )
+    except SnapshotValidationError as error:
+        return archived, f"invalid live {feed_type.value} snapshot: {error}"
+
+    store.save(live)
+    return [live, *archived], None
+
+
 def main() -> int:
     paths = AppPaths.from_repository()
     settings = load_settings(paths)
     now = SystemClock().now()
     target_date = now.date()
     store = SnapshotStore(paths.archive)
-    candidates = {}
-    failure_reasons = {}
+    candidates: dict[FeedType, list[ForecastSnapshot]] = {}
+    failure_reasons: dict[FeedType, str] = {}
 
     for feed_type in FeedType:
-        archived = list(store.find_for_date(feed_type, target_date, as_of=now))
-        result = fetch_feed(feed_type)
-        if result.xml is not None:
-            live = build_snapshot(
-                result.xml,
-                feed_type,
-                source=SnapshotSource.LIVE,
-                fetched_at=now,
-            )
-            store.save(live)
-            candidates[feed_type] = [live, *archived]
-        else:
-            candidates[feed_type] = archived
-            failure = result.failure
-            failure_reasons[feed_type] = (
-                failure.message if failure is not None else "IMS feed unavailable"
-            )
+        feed_candidates, failure_reason = acquire_feed_candidates(
+            feed_type,
+            target_date,
+            now=now,
+            store=store,
+        )
+        candidates[feed_type] = feed_candidates
+        if failure_reason is not None:
+            failure_reasons[feed_type] = failure_reason
 
     try:
         forecast = parse_daily_forecast(
