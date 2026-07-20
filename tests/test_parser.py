@@ -50,6 +50,40 @@ def _xml(root) -> str:
     return etree.tostring(root, encoding="unicode")
 
 
+def _evening_xml(feed_type: FeedType) -> str:
+    fixture_name = {
+        FeedType.COUNTRY: "country_forecast.xml",
+        FeedType.CITIES: "cities_forecast.xml",
+    }[feed_type]
+    root = _root(load_ims_fixture(fixture_name))
+    root.tag, title = {
+        FeedType.COUNTRY: (
+            "IsraelCitiesHourlyWeatherForecast",
+            "Weather Forecast for Israel (Evening)",
+        ),
+        FeedType.CITIES: (
+            "IsraelCitiesWeatherForecastEvening",
+            "Weather Forecast for Israel Cities (Evening)",
+        ),
+    }[feed_type]
+    root.find("Identification/Title").text = title
+    if feed_type is FeedType.COUNTRY:
+        identification = root.find("Identification")
+        originator = root.find("Originator")
+        organization = etree.Element("Organization")
+        organization.text = originator.findtext("Organization")
+        identification.insert(0, organization)
+        root.remove(originator)
+
+    if feed_type is FeedType.COUNTRY:
+        for time_unit in root.findall("Location/LocationData/TimeUnitData"):
+            for element in tuple(time_unit.findall("Element")):
+                if (element.findtext("ElementName") or "").startswith("Warning in "):
+                    time_unit.remove(element)
+
+    return _xml(root)
+
+
 def _city(root, city_id: str = "520"):
     return next(
         location
@@ -151,6 +185,53 @@ def test_fixture_cities_are_complete_unique_and_in_settings_order(app_settings):
     assert all(city.provenance.fetched_at == snapshot.fetched_at for city in result)
     assert all(city.provenance.issued_at == snapshot.issued_at for city in result)
     assert all(city.provenance.source_forecast_date == TARGET_DATE for city in result)
+
+
+def test_known_country_evening_snapshot_parses_the_exact_target_date():
+    snapshot = _snapshot(FeedType.COUNTRY, xml=_evening_xml(FeedType.COUNTRY))
+
+    result = parse_country_forecast([snapshot], TARGET_DATE)
+
+    assert result.forecast_date == TARGET_DATE
+    assert result.description_hebrew.strip()
+    assert result.provenance.snapshot_id == snapshot.snapshot_id
+
+
+def test_known_cities_evening_snapshot_parses_the_exact_target_date(app_settings):
+    snapshot = _snapshot(FeedType.CITIES, xml=_evening_xml(FeedType.CITIES))
+
+    result = parse_cities_forecast([snapshot], TARGET_DATE, settings=app_settings)
+
+    assert len(result) == 15
+    assert {city.forecast_date for city in result} == {TARGET_DATE}
+    assert all(city.provenance.snapshot_id == snapshot.snapshot_id for city in result)
+
+
+def test_partial_cities_evening_snapshot_keeps_per_city_archive_fallback(app_settings):
+    root = _root(_evening_xml(FeedType.CITIES))
+    root.remove(_city(root, "520"))
+    live = _snapshot(
+        FeedType.CITIES,
+        source=SnapshotSource.LIVE,
+        xml=_xml(root),
+    )
+    archive = _snapshot(
+        FeedType.CITIES,
+        source=SnapshotSource.ARCHIVE,
+        fetched_hour=2,
+    )
+
+    result = parse_cities_forecast(
+        [live, archive], TARGET_DATE, settings=app_settings
+    )
+
+    eilat = next(city for city in result if city.city_id == "520")
+    assert eilat.provenance.source is SnapshotSource.ARCHIVE
+    assert all(
+        city.provenance.source is SnapshotSource.LIVE
+        for city in result
+        if city.city_id != "520"
+    )
 
 
 def _settings_without_one_city(app_settings):

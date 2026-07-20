@@ -1,184 +1,132 @@
-"""
-Tests for File Saver Module
+"""Contracts for publishing one canonical Story PNG atomically."""
 
-Tests the image saving functionality including:
-- Dual format output (JPEG + PNG)
-- Directory creation
-- Cleanup of old files
-"""
-
-import pytest
-from datetime import date, timedelta
+from datetime import date
+from io import BytesIO
+import importlib
 from pathlib import Path
+
 from PIL import Image
+import pytest
 
-from src.delivery.file_saver import (
-    save_forecast_image,
-    cleanup_old_outputs,
-    get_latest_output,
-    get_output_path,
-    list_outputs,
-    OUTPUT_DIR
+
+TARGET_DATE = date(2025, 12, 18)
+
+
+def _file_saver_module():
+    return importlib.import_module("src.delivery.file_saver")
+
+
+def _png_bytes(
+    size: tuple[int, int] = (1080, 1920),
+    color: tuple[int, int, int] = (18, 52, 86),
+) -> bytes:
+    output = BytesIO()
+    Image.new("RGB", size, color).save(output, format="PNG")
+    return output.getvalue()
+
+
+def test_saves_exact_png_to_nested_directory_with_canonical_absolute_path(tmp_path):
+    file_saver = _file_saver_module()
+    output_directory = tmp_path / "nested" / "forecast"
+    png_bytes = _png_bytes()
+
+    output_path = file_saver.save_forecast_png(
+        png_bytes,
+        TARGET_DATE,
+        output_directory,
+    )
+
+    assert output_path == (output_directory / "forecast_2025-12-18.png").resolve()
+    assert output_path.read_bytes() == png_bytes
+    with Image.open(output_path) as image:
+        image.load()
+        assert image.format == "PNG"
+        assert image.size == (1080, 1920)
+
+
+@pytest.mark.parametrize(
+    "invalid_bytes",
+    [
+        b"",
+        b"not an image",
+        _png_bytes(size=(1079, 1920)),
+        b"\x89PNG\r\n\x1a\ntruncated",
+    ],
+    ids=["empty", "not-png", "wrong-size", "truncated-png"],
 )
+def test_invalid_png_fails_before_any_file_is_published(tmp_path, invalid_bytes):
+    file_saver = _file_saver_module()
+    output_directory = tmp_path / "not-created"
+
+    with pytest.raises(file_saver.OutputSaveError, match="1080x1920 PNG|PNG"):
+        file_saver.save_forecast_png(invalid_bytes, TARGET_DATE, output_directory)
+
+    assert not output_directory.exists()
 
 
-def create_test_image(width=100, height=100):
-    """Create a simple test image."""
-    return Image.new('RGBA', (width, height), color=(255, 0, 0, 255))
+def test_non_png_image_fails_before_publication(tmp_path):
+    file_saver = _file_saver_module()
+    output = BytesIO()
+    Image.new("RGB", (1080, 1920), "red").save(output, format="JPEG")
+
+    with pytest.raises(file_saver.OutputSaveError, match="PNG"):
+        file_saver.save_forecast_png(output.getvalue(), TARGET_DATE, tmp_path)
+
+    assert not (tmp_path / "forecast_2025-12-18.png").exists()
 
 
-class TestSaveForecastImage:
-    """Tests for image saving."""
-    
-    def test_creates_output_directory(self, tmp_path, monkeypatch):
-        """Test that output directory is created if missing."""
-        test_output_dir = tmp_path / "output"
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        assert not test_output_dir.exists()
-        
-        image = create_test_image()
-        save_forecast_image(image, "2024-12-18")
-        
-        assert test_output_dir.exists()
-    
-    def test_saves_jpeg(self, tmp_path, monkeypatch):
-        """Test that JPEG is saved."""
-        test_output_dir = tmp_path / "output"
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        image = create_test_image()
-        paths = save_forecast_image(image, "2024-12-18")
-        
-        jpeg_path = Path(paths["jpeg"])
-        assert jpeg_path.exists()
-        assert jpeg_path.suffix == ".jpg"
-    
-    def test_saves_png(self, tmp_path, monkeypatch):
-        """Test that PNG is saved."""
-        test_output_dir = tmp_path / "output"
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        image = create_test_image()
-        paths = save_forecast_image(image, "2024-12-18")
-        
-        png_path = Path(paths["png"])
-        assert png_path.exists()
-        assert png_path.suffix == ".png"
-    
-    def test_returns_both_paths(self, tmp_path, monkeypatch):
-        """Test that both paths are returned."""
-        test_output_dir = tmp_path / "output"
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        image = create_test_image()
-        paths = save_forecast_image(image, "2024-12-18")
-        
-        assert "jpeg" in paths
-        assert "png" in paths
-    
-    def test_filename_includes_date(self, tmp_path, monkeypatch):
-        """Test that filename includes the date."""
-        test_output_dir = tmp_path / "output"
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        image = create_test_image()
-        paths = save_forecast_image(image, "2024-12-18")
-        
-        assert "2024-12-18" in paths["jpeg"]
-        assert "2024-12-18" in paths["png"]
-    
-    def test_jpeg_is_rgb(self, tmp_path, monkeypatch):
-        """Test that JPEG is converted to RGB (no transparency)."""
-        test_output_dir = tmp_path / "output"
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        # Create RGBA image
-        image = create_test_image()
-        paths = save_forecast_image(image, "2024-12-18")
-        
-        # Load saved JPEG
-        saved_jpeg = Image.open(paths["jpeg"])
-        assert saved_jpeg.mode == "RGB"
+def test_same_date_rerun_atomically_replaces_the_complete_file(tmp_path):
+    file_saver = _file_saver_module()
+    first = _png_bytes(color=(200, 20, 20))
+    second = _png_bytes(color=(20, 200, 20))
+
+    output_path = file_saver.save_forecast_png(first, TARGET_DATE, tmp_path)
+    replaced_path = file_saver.save_forecast_png(second, TARGET_DATE, tmp_path)
+
+    assert replaced_path == output_path
+    assert output_path.read_bytes() == second
+    assert not list(tmp_path.glob(".*.tmp"))
 
 
-class TestCleanupOldOutputs:
-    """Tests for output cleanup."""
-    
-    def test_deletes_old_files(self, tmp_path, monkeypatch):
-        """Test that old files are deleted."""
-        test_output_dir = tmp_path / "output"
-        test_output_dir.mkdir()
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        # Create old file
-        old_date = date.today() - timedelta(days=35)
-        old_file = test_output_dir / f"forecast_{old_date.isoformat()}.jpg"
-        old_file.write_text("old")
-        
-        deleted = cleanup_old_outputs(max_age_days=30)
-        
-        assert deleted == 1
-        assert not old_file.exists()
-    
-    def test_preserves_recent_files(self, tmp_path, monkeypatch):
-        """Test that recent files are kept."""
-        test_output_dir = tmp_path / "output"
-        test_output_dir.mkdir()
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        # Create recent file
-        recent_date = date.today() - timedelta(days=5)
-        recent_file = test_output_dir / f"forecast_{recent_date.isoformat()}.jpg"
-        recent_file.write_text("recent")
-        
-        deleted = cleanup_old_outputs(max_age_days=30)
-        
-        assert deleted == 0
-        assert recent_file.exists()
+def test_failed_atomic_replace_preserves_old_file_and_removes_temporary_file(
+    tmp_path,
+    monkeypatch,
+):
+    file_saver = _file_saver_module()
+    original = _png_bytes(color=(200, 20, 20))
+    replacement = _png_bytes(color=(20, 200, 20))
+    output_path = file_saver.save_forecast_png(original, TARGET_DATE, tmp_path)
+
+    def fail_replace(source, destination):
+        assert Path(source).parent == tmp_path
+        assert Path(destination) == output_path
+        raise OSError("replace blocked")
+
+    monkeypatch.setattr(file_saver.os, "replace", fail_replace)
+
+    with pytest.raises(file_saver.OutputSaveError, match="replace blocked"):
+        file_saver.save_forecast_png(replacement, TARGET_DATE, tmp_path)
+
+    assert output_path.read_bytes() == original
+    assert not list(tmp_path.glob(".*.tmp"))
 
 
-class TestGetOutputPath:
-    """Tests for output path generation."""
-    
-    def test_jpeg_extension(self):
-        """Test JPEG path has .jpg extension."""
-        path = get_output_path("2024-12-18", "jpeg")
-        
-        assert path.suffix == ".jpg"
-        assert "2024-12-18" in str(path)
-    
-    def test_png_extension(self):
-        """Test PNG path has .png extension."""
-        path = get_output_path("2024-12-18", "png")
-        
-        assert path.suffix == ".png"
+def test_explicit_output_directory_has_no_cwd_or_global_output_dependency(
+    tmp_path,
+    monkeypatch,
+):
+    file_saver = _file_saver_module()
+    launch_directory = tmp_path / "launch"
+    launch_directory.mkdir()
+    explicit_output = tmp_path / "chosen" / "nested"
+    monkeypatch.chdir(launch_directory)
 
+    output_path = file_saver.save_forecast_png(
+        _png_bytes(),
+        TARGET_DATE,
+        explicit_output,
+    )
 
-class TestGetLatestOutput:
-    """Tests for finding latest output."""
-    
-    def test_returns_empty_when_no_outputs(self, tmp_path, monkeypatch):
-        """Test empty dict when no outputs exist."""
-        test_output_dir = tmp_path / "output"
-        test_output_dir.mkdir()
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        result = get_latest_output()
-        
-        assert result == {}
-    
-    def test_returns_latest_files(self, tmp_path, monkeypatch):
-        """Test that latest files are returned."""
-        test_output_dir = tmp_path / "output"
-        test_output_dir.mkdir()
-        monkeypatch.setattr("src.delivery.file_saver.OUTPUT_DIR", test_output_dir)
-        
-        # Create some files
-        (test_output_dir / "forecast_2024-12-17.jpg").write_text("old")
-        (test_output_dir / "forecast_2024-12-18.jpg").write_text("new")
-        
-        result = get_latest_output()
-        
-        assert "jpeg" in result
-        assert "2024-12-18" in str(result["jpeg"])
+    assert output_path.parent == explicit_output.resolve()
+    assert not (launch_directory / "output").exists()
+    assert not hasattr(file_saver, "OUTPUT_DIR")

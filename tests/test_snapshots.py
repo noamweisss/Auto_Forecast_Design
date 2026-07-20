@@ -3,6 +3,7 @@
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 
+from lxml import etree
 import pytest
 
 from src.data.snapshots import (
@@ -17,6 +18,48 @@ from tests.conftest import load_ims_fixture
 
 
 AWARE_TIME = datetime(2026, 7, 20, 6, 30, tzinfo=timezone.utc)
+FIXTURE_DATES = {
+    date(2025, 12, 17),
+    date(2025, 12, 18),
+    date(2025, 12, 19),
+    date(2025, 12, 20),
+}
+
+
+def _evening_fixture(
+    feed_type: FeedType, *, keep_country_warnings: bool = False
+) -> str:
+    fixture_name = {
+        FeedType.COUNTRY: "country_forecast.xml",
+        FeedType.CITIES: "cities_forecast.xml",
+    }[feed_type]
+    root = etree.fromstring(load_ims_fixture(fixture_name).encode("utf-8"))
+    root.tag, title = {
+        FeedType.COUNTRY: (
+            "IsraelCitiesHourlyWeatherForecast",
+            "Weather Forecast for Israel (Evening)",
+        ),
+        FeedType.CITIES: (
+            "IsraelCitiesWeatherForecastEvening",
+            "Weather Forecast for Israel Cities (Evening)",
+        ),
+    }[feed_type]
+    root.find("Identification/Title").text = title
+    if feed_type is FeedType.COUNTRY:
+        identification = root.find("Identification")
+        originator = root.find("Originator")
+        organization = etree.Element("Organization")
+        organization.text = originator.findtext("Organization")
+        identification.insert(0, organization)
+        root.remove(originator)
+
+    if feed_type is FeedType.COUNTRY and not keep_country_warnings:
+        for time_unit in root.findall("Location/LocationData/TimeUnitData"):
+            for element in tuple(time_unit.findall("Element")):
+                if (element.findtext("ElementName") or "").startswith("Warning in "):
+                    time_unit.remove(element)
+
+    return etree.tostring(root, encoding="unicode")
 
 
 def _small_xml(
@@ -70,6 +113,61 @@ def test_build_snapshot_extracts_production_fixture_metadata(
     assert snapshot.issued_at.isoformat() == "2025-12-17T04:23:00+02:00"
     assert snapshot.fetched_at.isoformat() == "2025-12-17T05:00:00+02:00"
     assert snapshot.forecast_dates == expected_dates
+
+
+@pytest.mark.parametrize("feed_type", [FeedType.COUNTRY, FeedType.CITIES])
+def test_build_snapshot_accepts_known_ims_evening_envelope(feed_type):
+    snapshot = build_snapshot(
+        _evening_fixture(feed_type),
+        feed_type,
+        source=SnapshotSource.LIVE,
+        fetched_at=AWARE_TIME,
+    )
+
+    assert snapshot.feed_type is feed_type
+    assert set(snapshot.forecast_dates) == FIXTURE_DATES
+
+
+def test_country_evening_envelope_allows_country_warning_elements():
+    snapshot = build_snapshot(
+        _evening_fixture(FeedType.COUNTRY, keep_country_warnings=True),
+        FeedType.COUNTRY,
+        source=SnapshotSource.LIVE,
+        fetched_at=AWARE_TIME,
+    )
+
+    assert snapshot.feed_type is FeedType.COUNTRY
+
+
+def test_build_snapshot_rejects_cities_shape_relabelled_as_country_evening():
+    root = etree.fromstring(
+        load_ims_fixture("cities_forecast.xml").encode("utf-8")
+    )
+    root.tag = "IsraelCitiesHourlyWeatherForecast"
+    root.find("Identification/Title").text = "Weather Forecast for Israel (Evening)"
+
+    with pytest.raises(SnapshotValidationError, match="country.*signature"):
+        build_snapshot(
+            etree.tostring(root, encoding="unicode"),
+            FeedType.COUNTRY,
+            source=SnapshotSource.LIVE,
+            fetched_at=AWARE_TIME,
+        )
+
+
+def test_build_snapshot_rejects_unknown_root_with_country_shape():
+    root = etree.fromstring(
+        load_ims_fixture("country_forecast.xml").encode("utf-8")
+    )
+    root.tag = "UnsupportedForecastEnvelope"
+
+    with pytest.raises(SnapshotValidationError, match="unsupported root"):
+        build_snapshot(
+            etree.tostring(root, encoding="unicode"),
+            FeedType.COUNTRY,
+            source=SnapshotSource.LIVE,
+            fetched_at=AWARE_TIME,
+        )
 
 
 def test_build_snapshot_applies_israel_summer_time_to_naive_issue_time():

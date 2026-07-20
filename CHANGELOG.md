@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added one thin `generate_forecast_image()` application workflow and a real
+  `python -m src.main` CLI that connect exact-date source selection, parsing,
+  Story context, Chromium rendering, and one local PNG.
+- Added deterministic offline fixture mode from committed sanitized IMS-shaped
+  XML, plus live IMS mode with per-feed archive fallback and no date shifting.
+- Added a browser-marked vertical integration test from the committed XML
+  fixtures through Playwright and the atomic output file.
 - Added the complete RTL 1080x1920 Story HTML/CSS and a deterministic Jinja +
   Playwright renderer that returns validated PNG bytes and reports failures by
   template, browser, asset, font, layout, screenshot, or PNG stage.
@@ -43,6 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Accepted the observed official IMS morning and evening feed envelopes through
+  strict product-shape checks while keeping exact-date and 15-city publication
+  requirements unchanged.
+- Replaced the old global Pillow/JPEG/PNG saver helpers with one canonical
+  `save_forecast_png()` boundary that validates and atomically replaces a
+  hydrated 1080x1920 PNG.
+- Extended the pull-request Chromium smoke job to run the full fixture-to-PNG
+  application path as well as renderer tests.
 - Matched city 402's Story-only Hebrew display label to Figma's visible
   `תל אביב`. Its stable ID, `tel_aviv` key, English/source identity
   `Tel Aviv - Yafo`, and IMS forecast data are unchanged.

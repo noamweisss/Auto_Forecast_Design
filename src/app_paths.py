@@ -38,6 +38,11 @@ class AppPaths:
         return self.root / "output"
 
     @property
+    def ims_fixtures(self) -> Path:
+        """Committed sanitized IMS XML used by the offline fixture workflow."""
+        return self.root / "tests" / "fixtures" / "ims"
+
+    @property
     def logs(self) -> Path:
         return self.root / "logs"
 

@@ -27,6 +27,35 @@ class SnapshotSource(str, Enum):
     FIXTURE = "fixture"
 
 
+_MORNING_ROOTS = {
+    FeedType.COUNTRY: "IsraelWeatherForecastMorning",
+    FeedType.CITIES: "IsraelCitiesWeatherForecastMorning",
+}
+_EVENING_ENVELOPES = {
+    FeedType.COUNTRY: (
+        "IsraelCitiesHourlyWeatherForecast",
+        "Weather Forecast for Israel (Evening)",
+    ),
+    FeedType.CITIES: (
+        "IsraelCitiesWeatherForecastEvening",
+        "Weather Forecast for Israel Cities (Evening)",
+    ),
+}
+_EVENING_ORGANIZATION_PATHS = {
+    FeedType.COUNTRY: "Identification/Organization",
+    FeedType.CITIES: "Originator/Organization",
+}
+_COUNTRY_EVENING_REQUIRED_ELEMENTS = {
+    "Weather in English",
+    "Weather in Hebrew",
+}
+_CITIES_SHAPE_ELEMENTS = {
+    "Maximum temperature",
+    "Minimum temperature",
+    "Weather code",
+}
+
+
 @dataclass(frozen=True)
 class ForecastSnapshot:
     snapshot_id: str
@@ -110,14 +139,7 @@ def build_snapshot(
         raise SnapshotValidationError(str(error)) from error
 
     root = _parse_xml(xml, feed_type)
-    expected_root = {
-        FeedType.COUNTRY: "IsraelWeatherForecastMorning",
-        FeedType.CITIES: "IsraelCitiesWeatherForecastMorning",
-    }[feed_type]
-    if root.tag != expected_root:
-        raise SnapshotValidationError(
-            f"{feed_type.value} XML expected root {expected_root}, found {root.tag}"
-        )
+    validate_feed_envelope(root, feed_type)
 
     issue_text = root.findtext("Identification/IssueDateTime")
     if issue_text is None or not issue_text.strip():
@@ -156,6 +178,71 @@ def build_snapshot(
         issued_at=issued_at,
         forecast_dates=tuple(sorted(forecast_dates)),
     )
+
+
+def validate_feed_envelope(root, feed_type: FeedType) -> None:
+    """Validate one of the exact IMS morning/evening feed identities we know."""
+    morning_root = _MORNING_ROOTS[feed_type]
+    evening_root, evening_title = _EVENING_ENVELOPES[feed_type]
+
+    if root.tag == morning_root:
+        return
+    if root.tag != evening_root:
+        raise SnapshotValidationError(
+            f"{feed_type.value} XML has unsupported root {root.tag}; "
+            f"expected root {morning_root} or {evening_root}"
+        )
+
+    organization = (
+        root.findtext(_EVENING_ORGANIZATION_PATHS[feed_type]) or ""
+    ).strip()
+    title = (root.findtext("Identification/Title") or "").strip()
+    if organization != "Israel Meteorological Service" or title != evening_title:
+        raise SnapshotValidationError(
+            f"{feed_type.value} XML evening envelope does not match the validated "
+            f"{feed_type.value} signature"
+        )
+
+    if feed_type is FeedType.COUNTRY:
+        _validate_country_evening_signature(root)
+    else:
+        _validate_cities_evening_signature(root)
+
+
+def _validate_country_evening_signature(root) -> None:
+    """Disambiguate the misleading country-evening root from a cities feed."""
+    locations = root.findall("Location")
+    element_names = {
+        (element.findtext("ElementName") or "").strip()
+        for element in root.findall(".//TimeUnitData/Element")
+    }
+    is_country_shape = (
+        len(locations) == 1
+        and (locations[0].findtext("LocationMetaData/LocationId") or "").strip()
+        == "230"
+        and (locations[0].findtext("LocationMetaData/LocationNameEng") or "").strip()
+        == "Israel"
+        and _COUNTRY_EVENING_REQUIRED_ELEMENTS <= element_names
+        and not element_names.intersection(_CITIES_SHAPE_ELEMENTS)
+    )
+    if not is_country_shape:
+        raise SnapshotValidationError(
+            "country XML evening envelope does not match the validated country signature"
+        )
+
+
+def _validate_cities_evening_signature(root) -> None:
+    """Require a cities-shaped payload without deciding whether all cities are usable."""
+    element_names = {
+        (element.findtext("ElementName") or "").strip()
+        for element in root.findall(".//TimeUnitData/Element")
+    }
+    if not root.findall("Location") or not element_names.intersection(
+        _CITIES_SHAPE_ELEMENTS
+    ):
+        raise SnapshotValidationError(
+            "cities XML evening envelope does not match the validated cities signature"
+        )
 
 
 def _parse_xml(xml: str, feed_type: FeedType):

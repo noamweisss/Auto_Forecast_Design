@@ -1,16 +1,17 @@
 # Project Status
 
-Last reviewed: 2026-07-20
+Last reviewed: 2026-07-21
 
 This page is the practical restart map for someone returning to the repository
 after a long gap. It separates executable code from plans and placeholders.
 
 ## The short version
 
-The project can turn one validated Story packing list into a checked 1080x1920
-PNG. It still does not run the full path from real IMS data through rendering
-and saving. That one local real-data image is the next milestone; email and
-scheduled automation come later.
+The project now runs one thin path from exact-date IMS data through the checked
+Story renderer to one atomic 1080x1920 PNG. Fixture mode proves the complete path
+offline with local sample data. On 2026-07-21, live mode also generated the image
+from the current official country and city feeds without archive fallback. Email
+and scheduled automation remain separate future work.
 
 ## Layer-by-layer state
 
@@ -28,17 +29,17 @@ scheduled automation come later.
 | Frozen visual reference | Available | A verified 1080x1920 Figma export, sanitized matching forecast, and exact metadata/hashes provide an offline target without live Figma access. |
 | HTML/CSS template | Implemented | Literal RTL HTML/CSS reproduces the frozen Story geometry with physical top-left city coordinates and committed local assets. |
 | Playwright renderer | Implemented | A strict Jinja render becomes a checked 1080x1920 PNG; browser, page, asset, font, layout, screenshot, and PNG failures are actionable. |
-| Image saving | Implemented | Pillow images can be saved as JPEG and PNG. |
+| Image saving | Implemented | Checked 1080x1920 PNG bytes are published through a flushed, fsynced temporary file and atomic replace. |
 | Email delivery | Placeholder | Configuration validation exists, but message construction and sending are stubs. |
-| Main workflow | Placeholder | `python -m src.main` explains the intended flow but does not run it. |
-| Automation | Partial | Pull requests run offline tests plus a real-Chromium render smoke job. No daily production workflow exists. |
+| Main workflow | Implemented | `python -m src.main` runs fixture or live source selection, exact-date parsing, context building, Chromium rendering, and one local PNG. |
+| Automation | Partial | Pull requests run offline tests plus real-Chromium renderer and fixture-to-PNG smoke tests. No daily production workflow exists. |
 
 ## Verification snapshot
 
-On 2026-07-20, the full suite passed 197 tests with no expected failures.
+On 2026-07-21, the full suite passed 241 tests with no expected failures.
 The normal passing regressions for F-02 and F-03 prove exact-date fallback and
 complete 15-city output. The run used the isolated audit environment and a
-writable pytest temporary directory, including 8 browser tests with installed
+writable pytest temporary directory, including 10 browser tests with installed
 Chromium. The frozen reference, rendered PNG, overlay, and amplified difference
 were inspected at normal size. The visual gate passed: canvas, orientation,
 map, logos, city relationships, Hebrew, numeric bidi, and hierarchy had no hard
@@ -51,16 +52,14 @@ The Story deliberately uses Figma's visible Hebrew label `תל אביב` for cit
 
 ## Recommended next milestone
 
-Produce one real-data local image before building email or scheduling:
+Turn the working local command into a useful daily routine:
 
-1. Connect the existing data pipeline to the renderer for one explicit date.
-2. Pass the returned PNG into the existing local image-saving boundary.
-3. Run that orchestration from `python -m src.main` without email or scheduling.
-4. Inspect the resulting 1080x1920 real-data image at normal size against the frozen
-   reference.
+1. Decide whether the next step is scheduled generation, email delivery, or both.
+2. Add credentials only through environment settings; never commit them.
+3. Keep generated images and fetched XML outside Git, as they are today.
+4. Refine the first live design later if the media team wants visual changes.
 
-This is intentionally one product milestone rather than a request to finish the
-entire delivery system.
+The local generator is now a real starting point for that work, not a placeholder.
 
 ## Codex cloud readiness
 
@@ -96,8 +95,12 @@ The repository now also carries the exact Figma node `1:2` export and matching
 sanitized mock forecast as an offline visual oracle. The checked renderer uses
 that context to produce deterministic PNG bytes and refuses incomplete browser
 state, assets, fonts, or geometry. This makes layout work reproducible without
-claiming that the mock values are a real IMS forecast. The remaining boundary
-is application orchestration. See [Architecture](ARCHITECTURE.md).
+claiming that the mock values are a real IMS forecast. A thin application now
+obtains fixture or live candidates, parses one exact-date forecast, builds the
+context, renders PNG bytes, and atomically publishes one canonical output. It
+recognizes the observed IMS morning and evening envelopes while preserving the
+same exact-date and 15-city publication rules. The 2026-07-21 live run completed
+without archive fallback. See [Architecture](ARCHITECTURE.md).
 
 ## Source-of-truth order
 

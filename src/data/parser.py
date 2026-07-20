@@ -13,6 +13,8 @@ from src.data.snapshots import (
     ForecastProvenance,
     ForecastSnapshot,
     SnapshotSource,
+    SnapshotValidationError,
+    validate_feed_envelope,
 )
 from src.settings import AppSettings, CitySettings
 
@@ -179,18 +181,13 @@ def _candidate_roots(
     target_date: date,
 ) -> list[_ParsedCandidate]:
     candidates: list[_ParsedCandidate] = []
-    expected_root = {
-        FeedType.COUNTRY: "IsraelWeatherForecastMorning",
-        FeedType.CITIES: "IsraelCitiesWeatherForecastMorning",
-    }[feed_type]
     for position, snapshot in enumerate(snapshots):
         if snapshot.feed_type is not feed_type or target_date not in snapshot.forecast_dates:
             continue
         try:
             root = _parse_snapshot_xml(snapshot.xml)
-        except etree.XMLSyntaxError:
-            continue
-        if root.tag != expected_root:
+            validate_feed_envelope(root, feed_type)
+        except (etree.XMLSyntaxError, SnapshotValidationError):
             continue
         candidates.append(_ParsedCandidate(position, snapshot, root))
     return candidates

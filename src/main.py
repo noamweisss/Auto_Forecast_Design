@@ -1,103 +1,148 @@
-"""
-IMS Daily Forecast Generator - Main Entry Point
-
-This script orchestrates the complete workflow:
-1. Fetch fresh forecast data from IMS XML sources
-2. Parse XML into structured Python objects
-3. Generate designed image based on Figma specifications
-4. Save image in both JPEG and PNG formats
-5. Send via email to the media team
-
-Usage:
-    python -m src.main                    # Normal execution
-    python -m src.main --no-email         # Generate image only, skip email
-    python -m src.main --layout twitter   # Use different layout (future)
-
-For detailed documentation, see: docs/00_initial_plan.md
-"""
+"""Command-line boundary for generating one local IMS forecast Story PNG."""
 
 import argparse
+from datetime import date
+import logging
+from pathlib import Path
+import re
+from typing import Sequence
 
 from dotenv import load_dotenv
 
 from src.app_paths import AppPaths
+from src.application import (
+    FIXTURE_DEFAULT_DATE,
+    ForecastRunError,
+    GenerationRequest,
+    GenerationResult,
+    RunStage,
+    SourceMode,
+    generate_forecast_image,
+)
 from src.clock import SystemClock
-from src.settings import load_settings
+from src.rendering.template_renderer import TemplateRenderer
+from src.settings import ConfigurationError, load_settings
 from src.utils.logger import configure_logging
 
-# The end-to-end workflow imports will be implemented in future phases.
-# from src.data.fetcher import fetch_forecast_data
-# from src.data.parser import parse_forecast
-# from src.rendering.instagram_story import InstagramStoryRenderer
-# from src.delivery.email_sender import send_forecast_email
+
+logger = logging.getLogger(__name__)
+
+_EXIT_BY_STAGE = {
+    RunStage.SOURCE: 4,
+    RunStage.FORECAST: 5,
+    RunStage.RENDER: 6,
+    RunStage.OUTPUT: 7,
+}
 
 
-def parse_arguments():
-    """
-    Parse command line arguments.
-    
-    Returns:
-        argparse.Namespace with parsed arguments
-    """
+def _iso_date(value: str) -> date:
+    if re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value) is None:
+        raise argparse.ArgumentTypeError("date must use YYYY-MM-DD")
+    try:
+        return date.fromisoformat(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"invalid calendar date: {value}") from error
+
+
+def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI values without reading configuration, time, or the filesystem."""
     parser = argparse.ArgumentParser(
-        description="Generate and send daily weather forecast images"
+        description="Generate one local 1080x1920 IMS forecast Story PNG."
     )
     parser.add_argument(
-        "--no-email",
-        action="store_true",
-        help="Generate image only, skip sending email"
-    )
-    parser.add_argument(
-        "--layout",
-        type=str,
-        default="instagram_story",
-        choices=["instagram_story"],  # Will expand as we add more layouts
-        help="Layout format to generate (default: instagram_story)"
+        "--source",
+        choices=[mode.value for mode in SourceMode],
+        default=SourceMode.LIVE.value,
+        help="Data source: live IMS or committed local sample fixtures (default: live).",
     )
     parser.add_argument(
         "--date",
-        type=str,
-        default=None,
-        help="Specific date to generate forecast for (YYYY-MM-DD format)"
+        type=_iso_date,
+        help=(
+            "Exact forecast date (YYYY-MM-DD). Defaults to the Israel run-start "
+            "date for live data and 2025-12-18 for fixtures."
+        ),
     )
-    
-    return parser.parse_args()
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help=(
+            "PNG destination directory (default: repository output/). An explicit "
+            "relative path is resolved from the repository root."
+        ),
+    )
+    return parser.parse_args(argv)
 
 
-def main():
-    """
-    Main entry point for the forecast generator.
-    
-    This function orchestrates the entire workflow from data fetching
-    to email delivery. Each step is logged for debugging purposes.
-    """
-    paths = AppPaths.from_repository()
-    load_dotenv(dotenv_path=paths.root / ".env", override=False)
-    clock = SystemClock()
-    now = clock.now()
-    configure_logging(paths.logs, now)
-    settings = load_settings(paths)
+def main(argv: Sequence[str] | None = None) -> int:
+    """Initialize the application boundary once and return a stable process exit."""
+    arguments = parse_arguments(argv)
 
-    # These explicit boundary values will drive the real workflow in a later slice.
-    target_date = now.date()
-    _ = settings, target_date
-    
-    print("=" * 60)
-    print("IMS Daily Forecast Generator")
-    print("=" * 60)
-    print()
-    print("[placeholder] Implementation coming soon.")
-    print()
-    print("The workflow will be:")
-    print("  1. Fetch XML data from IMS")
-    print("  2. Parse forecast data")
-    print("  3. Generate image using Instagram Story layout")
-    print("  4. Save as JPEG + PNG")
-    print("  5. Send via email")
-    print()
-    print("See docs/PROJECT_STATUS.md for the verified project state.")
-    print("=" * 60)
+    try:
+        paths = AppPaths.from_repository()
+        load_dotenv(dotenv_path=paths.root / ".env", override=False)
+        now = SystemClock().now()
+        configure_logging(paths.logs, now)
+        settings = load_settings(paths)
+
+        source_mode = SourceMode(arguments.source)
+        target_date = arguments.date or (
+            FIXTURE_DEFAULT_DATE
+            if source_mode is SourceMode.FIXTURE
+            else now.date()
+        )
+        output_directory = _resolve_output_directory(arguments.output_dir, paths)
+
+        renderer = TemplateRenderer()
+        result = generate_forecast_image(
+            GenerationRequest(
+                target_date=target_date,
+                source_mode=source_mode,
+                output_directory=output_directory,
+            ),
+            paths=paths,
+            settings=settings,
+            now=now,
+            renderer=renderer,
+        )
+    except ConfigurationError as error:
+        logger.error("%s", error)
+        return 3
+    except ForecastRunError as error:
+        logger.error("%s", error)
+        return _EXIT_BY_STAGE[error.stage]
+    except Exception:
+        logger.exception("Unexpected forecast generation error")
+        return 1
+
+    _print_success(result)
+    return 0
+
+
+def _resolve_output_directory(value: Path | None, paths: AppPaths) -> Path:
+    if value is None:
+        return paths.output
+    if value.is_absolute():
+        return value.resolve()
+    return (paths.root / value).resolve()
+
+
+def _print_success(result: GenerationResult) -> None:
+    source_text = {
+        SourceMode.LIVE: "live IMS",
+        SourceMode.FIXTURE: "local fixture",
+    }[result.source_mode]
+    fallback_text = (
+        f"yes ({result.fallback_value_count} values)"
+        if result.used_fallback
+        else "no"
+    )
+    print("Forecast image created.")
+    print(f"Date: {result.target_date.isoformat()}")
+    print(f"Data source requested: {source_text}")
+    print(f"Exact-date archived values used: {fallback_text}")
+    print(f"PNG: {result.output_path}")
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

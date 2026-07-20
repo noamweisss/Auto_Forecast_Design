@@ -24,8 +24,10 @@ before = {{path.name for path in Path.cwd().iterdir()}}
 import src.data.archive
 import src.data.fetcher
 import src.data.parser
+import src.application
 import src.delivery.email_sender
 import src.delivery.file_saver
+import src.main
 after = {{path.name for path in Path.cwd().iterdir()}}
 assert os.getenv({marker!r}) is None
 assert after == before, (before, after)

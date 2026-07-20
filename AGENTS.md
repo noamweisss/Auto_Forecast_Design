@@ -26,10 +26,15 @@ may be stale.
 
 - Data models, IMS XML fetching, parsing, archiving, and image file saving are
   implemented and covered by tests.
-- `src/main.py` is still a placeholder; it does not run the advertised pipeline.
+- `src/application.py` and `src/main.py` connect source selection, exact-date
+  parsing, Story rendering, and one atomic local PNG.
 - The validated Story render context, HTML/CSS template, and checked Playwright
   PNG renderer are implemented and covered by structural and browser tests.
-- The data, renderer, and saver are not connected by one application workflow yet.
+- Fixture mode is a deterministic offline demo using committed sanitized IMS-shaped
+  samples; live mode uses fetched IMS data and never shifts the requested date.
+- The 2026-07-21 live acceptance generated one complete 1080x1920 PNG from the
+  official feeds. Morning and evening feed envelopes are both validated without
+  changing the requested forecast date.
 - Email delivery still contains stubs.
 - No production GitHub Actions workflow exists yet.
 - Figma-derived tokens and local design assets are committed, so ordinary work
@@ -70,8 +75,15 @@ Full local entry point:
 python -m src.main
 ```
 
-The entry point currently prints a placeholder message. Treat that as known
-unfinished behavior, not a successful forecast-generation run.
+For a deterministic offline run:
+
+```bash
+python -m src.main --source fixture
+```
+
+The fixture command uses local sample inputs, not today's forecast. The default
+command requests real live IMS data for the Israel run-start date. Both commands
+write only one `forecast_YYYY-MM-DD.png`; email and scheduling are separate work.
 
 ## Project map
 
@@ -80,6 +92,7 @@ src/data/       Fetch, parse, model, and archive IMS XML
 src/design/     Validated, template-ready Story context and asset addresses
 src/rendering/  Jinja2 template plus Playwright screenshot pipeline
 src/delivery/   Image saving and future email delivery
+src/application.py  Thin source-to-PNG orchestration
 src/utils/      Logging and date helpers
 config/         City, weather-code, and Figma-derived design data
 assets/         Fonts, logos, map, and weather icons via Git LFS

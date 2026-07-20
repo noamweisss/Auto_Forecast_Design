@@ -91,6 +91,7 @@ def test_pull_requests_run_unskippable_browser_render_smoke_job():
     assert "if: github.event_name == 'pull_request'" in ci_text
     assert "python -m playwright install --with-deps chromium" in ci_text
     assert "python -m pytest tests/test_template_renderer.py" in ci_text
+    assert "tests/test_application.py" in ci_text
     assert "-m browser" in ci_text
     assert 'CI: "true"' in ci_text
     assert "continue-on-error" not in ci_text

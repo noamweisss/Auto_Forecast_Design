@@ -5,12 +5,12 @@ has one job, so it is easy to change the visual design without accidentally
 changing data handling.
 
 ```text
-main (application boundary)
+main (CLI boundary)
   -> paths -> repository .env -> Israel clock -> logging -> validated settings
-  -> data: structured fetch -> validated snapshot -> atomic store -> parse
+  -> application: fixture/live candidates -> exact-date parse
   -> design: render-ready names, positions, and icon choices
   -> rendering: Jinja HTML/CSS + Playwright PNG screenshot
-  -> delivery: save the finished image
+  -> delivery: atomically publish one checked PNG
 ```
 
 ## Shared project paths
@@ -18,7 +18,8 @@ main (application boundary)
 `src/app_paths.py` is the one place that locates repository-owned folders. Its
 paths are based on the source file's location rather than the terminal's current
 working directory. Code should use `PATHS.config`, `PATHS.assets`,
-`PATHS.archive`, `PATHS.output`, or `PATHS.logs` instead of creating a relative
+`PATHS.archive`, `PATHS.output`, `PATHS.logs`, or the explicit committed
+`PATHS.ims_fixtures` sample-data path instead of creating a relative
 `Path("...")` at module level.
 
 This is analogous to a Figma file's shared styles: a single named source avoids
@@ -149,19 +150,44 @@ cities, and every component date must equal the requested date. Fallback flags
 are read-only properties derived from provenance, so a value cannot claim to be
 live while its recorded source says otherwise.
 
+## One source-to-PNG application
+
+`src/application.py` is deliberately a thin coordinator. Fixture mode reads the
+two committed sanitized IMS-shaped XML samples, seals them with one fixed Israel
+timestamp, and never touches HTTP or archives. Live mode finds exact-date archive
+candidates before fetching each feed, saves every structurally valid response,
+and places a live candidate first only when it advertises the requested date.
+Archives follow newest-first and may replace only unusable values for that same
+date. No cleanup, email, scheduling, or nearby-date selection enters this path.
+
+Both modes then use the same parser, Story context adapter, Chromium renderer,
+and `save_forecast_png()` boundary. The saver validates hydrated 1080x1920 PNG
+bytes before creating the destination, writes and fsyncs a temporary file beside
+the final path, and uses atomic replace. A same-date rerun therefore publishes
+one complete `forecast_YYYY-MM-DD.png` or preserves the previous complete file.
+
+`src/main.py` parses arguments before side effects, reads the Israel clock once,
+and maps expected configuration, source, forecast, render, and output failures to
+stable exits. Fixture means local sample data. Live means real IMS responses.
+
+IMS overwrites the same public files with morning and evening editions. The
+snapshot boundary recognizes only the observed product envelopes and checks
+their identifying structure. Publication still requires the requested date and
+all 15 configured cities.
+
 ## Import safety
 
 Library modules obtain standard Python loggers without configuring them.
 `main()` explicitly loads only the repository `.env` without overriding an
-existing process value, then configures console/file logging. Importing data or
-delivery modules does not create `logs/`, write files, or load a `.env` from the
-current working directory.
+existing process value, then configures console/file logging. Importing the
+application, data, rendering, or delivery modules does not create `logs/`, write
+files, or load a `.env` from the current working directory.
 
 ## Current boundary
 
-The data layer fetches, seals, stores, and parses exact-date snapshots into one
-complete provenance-backed forecast. The design layer validates and packs that
-forecast; the HTML/CSS and checked Chromium renderer produce PNG bytes; and the
-frozen offline package provides the exact visual target and matching mock
-context. The end-to-end application workflow remains unfinished: `src/main.py`
-still does not connect data, rendering, and saving.
+The application now connects exact-date source candidates, one complete
+provenance-backed forecast, the validated design packing list, checked Chromium
+PNG bytes, and one atomic local output. The committed fixture path proves that
+boundary offline. On 2026-07-21 the same path also generated a 1080x1920 PNG from
+the official IMS feeds with no archive fallback. Email, scheduling, and
+production notifications remain outside this boundary.

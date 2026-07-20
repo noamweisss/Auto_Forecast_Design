@@ -46,5 +46,5 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - name: Render Story in Chromium
         run: >-
-          python -m pytest tests/test_template_renderer.py
+          python -m pytest tests/test_template_renderer.py tests/test_application.py
           -q -p no:cacheprovider -m browser

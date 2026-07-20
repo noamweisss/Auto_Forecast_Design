@@ -78,8 +78,14 @@ class SnapshotStore:
         target_date: date,
         *,
         as_of: datetime,
+        strict: bool = False,
     ) -> tuple[ForecastSnapshot, ...]:
-        """Return recent snapshots that explicitly contain ``target_date``."""
+        """Return recent snapshots that explicitly contain ``target_date``.
+
+        Manual inspection keeps the historical best-effort default. The
+        publishing application opts into ``strict`` so it cannot claim success
+        after silently losing a source record.
+        """
         _require_aware_as_of(as_of)
         if not isinstance(feed_type, FeedType):
             raise SnapshotArchiveError("feed_type must be a FeedType")
@@ -88,10 +94,20 @@ class SnapshotStore:
 
         window_start = as_of - timedelta(days=RETENTION_DAYS)
         matches = []
-        for path in self._record_paths():
+        try:
+            record_paths = self._record_paths()
+        except OSError as error:
+            raise SnapshotArchiveError(
+                f"Could not enumerate snapshot records: {error}"
+            ) from error
+        for path in record_paths:
             try:
                 snapshot = _load_record(path)
             except SnapshotArchiveError as error:
+                if strict:
+                    raise SnapshotArchiveError(
+                        f"Could not read snapshot record {path.name}: {error}"
+                    ) from error
                 logger.warning("Skipping corrupt snapshot record %s: %s", path, error)
                 continue
             if snapshot.feed_type is not feed_type:
