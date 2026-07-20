@@ -4,8 +4,8 @@ import json
 from datetime import date
 
 from src.app_paths import PATHS
-from src.data import parser
 from src.data.parser import parse_cities_forecast
+from src.settings import load_settings
 
 SINGLE_CITY_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <IsraelCitiesWeatherForecastMorning>
@@ -57,10 +57,13 @@ def test_every_configured_city_has_display_names():
 def test_parser_uses_configured_hebrew_city_name_from_any_working_directory(monkeypatch, tmp_path):
     """Parser configuration is anchored to the repository, not the shell cwd."""
     monkeypatch.chdir(tmp_path)
-    parser._cities_config_cache = None
-    parser._weather_codes_cache = None
+    settings = load_settings(PATHS)
 
-    city = parse_cities_forecast(SINGLE_CITY_XML, target_date=date(2025, 12, 22))[0]
+    city = parse_cities_forecast(
+        SINGLE_CITY_XML,
+        target_date=date(2025, 12, 22),
+        settings=settings,
+    )[0]
 
     assert city.city_name_english == "Jerusalem"
     assert city.city_name_hebrew == "ירושלים"

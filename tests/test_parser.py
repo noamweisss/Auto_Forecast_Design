@@ -10,18 +10,15 @@ Tests the XML parsing functionality including:
 
 import pytest
 from datetime import date
-from pathlib import Path
 
 from src.data.parser import (
     parse_country_forecast,
     parse_cities_forecast,
     parse_daily_forecast,
     _get_weather_description,
-    _extract_element_value,
     _parse_wind_data,
-    _get_internal_key
 )
-from src.data.models import CityForecast, CountryForecast, DailyForecast
+from src.data.models import DailyForecast
 
 
 # Sample XML for testing (simplified)
@@ -152,15 +149,19 @@ class TestParseCountryForecast:
 class TestParseCitiesForecast:
     """Tests for city forecast parsing."""
     
-    def test_parse_multiple_cities(self):
+    def test_parse_multiple_cities(self, app_settings):
         """Test that all cities are parsed."""
-        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        result = parse_cities_forecast(
+            SAMPLE_CITIES_XML, date(2025, 12, 22), settings=app_settings
+        )
         
         assert len(result) == 2
     
-    def test_parse_city_temperature(self):
+    def test_parse_city_temperature(self, app_settings):
         """Test temperature extraction."""
-        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        result = parse_cities_forecast(
+            SAMPLE_CITIES_XML, date(2025, 12, 22), settings=app_settings
+        )
         
         # Find Jerusalem
         jerusalem = next(c for c in result if c.city_id == "510")
@@ -168,26 +169,32 @@ class TestParseCitiesForecast:
         assert jerusalem.min_temp == 8
         assert jerusalem.max_temp == 15
     
-    def test_parse_city_weather_code(self):
+    def test_parse_city_weather_code(self, app_settings):
         """Test weather code extraction."""
-        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        result = parse_cities_forecast(
+            SAMPLE_CITIES_XML, date(2025, 12, 22), settings=app_settings
+        )
         
         jerusalem = next(c for c in result if c.city_id == "510")
         
         assert jerusalem.weather_code == "1250"
     
-    def test_parse_city_names(self):
+    def test_parse_city_names(self, app_settings):
         """Test city name extraction in both languages."""
-        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        result = parse_cities_forecast(
+            SAMPLE_CITIES_XML, date(2025, 12, 22), settings=app_settings
+        )
         
         jerusalem = next(c for c in result if c.city_id == "510")
         
         assert jerusalem.city_name_english == "Jerusalem"
         assert jerusalem.city_name_hebrew == "ירושלים"
     
-    def test_internal_key_assigned(self):
+    def test_internal_key_assigned(self, app_settings):
         """Test that internal_key is assigned from config."""
-        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        result = parse_cities_forecast(
+            SAMPLE_CITIES_XML, date(2025, 12, 22), settings=app_settings
+        )
         
         jerusalem = next(c for c in result if c.city_id == "510")
         
@@ -198,16 +205,16 @@ class TestParseCitiesForecast:
 class TestWeatherCodeLookup:
     """Tests for weather code translation."""
     
-    def test_known_code_returns_description(self):
+    def test_known_code_returns_description(self, app_settings):
         """Test that known code returns correct description."""
-        hebrew, english = _get_weather_description("1250")
+        hebrew, english = _get_weather_description("1250", app_settings)
         
         assert hebrew == "בהיר"
         assert english == "Clear"
     
-    def test_unknown_code_returns_unknown(self):
+    def test_unknown_code_returns_unknown(self, app_settings):
         """Test that unknown code returns 'Unknown'."""
-        hebrew, english = _get_weather_description("9999")
+        hebrew, english = _get_weather_description("9999", app_settings)
         
         assert hebrew == "לא ידוע"
         assert english == "Unknown"
@@ -241,12 +248,13 @@ class TestWindDataParsing:
 class TestDailyForecast:
     """Tests for combined daily forecast parsing."""
     
-    def test_parse_complete_forecast(self):
+    def test_parse_complete_forecast(self, app_settings):
         """Test parsing both country and cities."""
         result = parse_daily_forecast(
             SAMPLE_COUNTRY_XML,
             SAMPLE_CITIES_XML,
-            date(2025, 12, 22)
+            date(2025, 12, 22),
+            settings=app_settings,
         )
         
         assert isinstance(result, DailyForecast)
@@ -258,12 +266,14 @@ class TestDailyForecast:
 class TestFallbackBehavior:
     """Tests for fallback when data is missing/invalid."""
     
-    def test_city_marked_as_fallback_when_using_archive(self):
+    def test_city_marked_as_fallback_when_using_archive(self, app_settings):
         """Test that city is marked as fallback when archive is used."""
         # This would need a more complex setup with actual fallback data
         # For now, just verify the flag exists
-        result = parse_cities_forecast(SAMPLE_CITIES_XML, date(2025, 12, 22))
+        result = parse_cities_forecast(
+            SAMPLE_CITIES_XML, date(2025, 12, 22), settings=app_settings
+        )
         
         # Normal data should not be marked as fallback
         for city in result:
-            assert city.is_fallback == False
+            assert not city.is_fallback

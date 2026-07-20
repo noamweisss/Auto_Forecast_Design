@@ -55,7 +55,7 @@ def _with_invalid_eilat_optional_data(xml_content: str, forecast_date: str) -> s
     strict=True,
     reason="F-02: fallback chooses the first available XML date instead of the target date.",
 )
-def test_f02_fallback_uses_target_date_values_from_multiday_xml():
+def test_f02_fallback_uses_target_date_values_from_multiday_xml(app_settings):
     target_date = date(2025, 12, 18)
     fallback_xml = load_ims_fixture("cities_forecast.xml")
     invalid_primary_xml = _with_eilat_maximum_removed(fallback_xml, target_date.isoformat())
@@ -63,6 +63,7 @@ def test_f02_fallback_uses_target_date_values_from_multiday_xml():
     cities = parse_cities_forecast(
         invalid_primary_xml,
         target_date=target_date,
+        settings=app_settings,
         fallback_xml=fallback_xml,
     )
     eilat = next(city for city in cities if city.city_id == "520")
@@ -75,11 +76,11 @@ def test_f02_fallback_uses_target_date_values_from_multiday_xml():
     strict=True,
     reason="F-03: invalid optional city data can be swallowed and return fewer than 15 cities.",
 )
-def test_f03_invalid_optional_city_data_cannot_return_incomplete_forecast():
+def test_f03_invalid_optional_city_data_cannot_return_incomplete_forecast(app_settings):
     target_date = date(2025, 12, 17)
     invalid_xml = _with_invalid_eilat_optional_data(
         load_ims_fixture("cities_forecast.xml"), target_date.isoformat()
     )
 
     with pytest.raises(ValueError, match="configured 15-city set"):
-        parse_cities_forecast(invalid_xml, target_date=target_date)
+        parse_cities_forecast(invalid_xml, target_date=target_date, settings=app_settings)

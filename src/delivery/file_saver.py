@@ -22,16 +22,14 @@ Usage:
 """
 
 from datetime import date, timedelta
+import logging
 from pathlib import Path
 from typing import Dict, Optional
 
 from PIL import Image
 
 from src.app_paths import PATHS
-from src.utils.logger import get_logger
-
-# Initialize logger for this module
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Output directory
 OUTPUT_DIR = PATHS.output
@@ -121,7 +119,7 @@ def cleanup_old_outputs(max_age_days: int = DEFAULT_MAX_AGE_DAYS) -> int:
                 deleted_count += 1
                 logger.debug(f"Deleted old output: {file_path}")
                 
-        except (ValueError, IndexError) as e:
+        except (ValueError, IndexError):
             # Skip files that don't match expected naming pattern
             logger.warning(f"Skipping file with unexpected name: {file_path}")
             continue
@@ -207,7 +205,7 @@ if __name__ == "__main__":
     # Get latest
     latest = get_latest_output()
     if latest:
-        print(f"\nLatest outputs:")
+        print("\nLatest outputs:")
         for fmt, path in latest.items():
             print(f"  {fmt}: {path}")
     else:

@@ -16,9 +16,11 @@ from real IMS data. Email and scheduled automation come later.
 | Layer | State | What that means |
 | --- | --- | --- |
 | Shared paths | Implemented | `src/app_paths.py` anchors repository paths so commands do not depend on the shell directory. |
+| Clock and settings boundary | Implemented | `main()` establishes paths, local `.env`, Israel time, logging, and one validated immutable settings load in that order. |
 | Data models | Implemented | Forecast objects and validation exist in `src/data/models.py`. |
 | IMS fetching | Implemented | Country and city XML can be downloaded with retry and encoding handling. |
-| XML parsing | Implemented | XML is converted to forecast objects using committed city and weather-code data. |
+| XML parsing | Implemented | XML is converted using an explicit target date and passed-in validated settings. Two known fallback defects remain characterized. |
+| Snapshot vocabulary | Contract only | Immutable snapshot and provenance types validate source facts, but fetch/archive selection does not populate them yet. |
 | Archive | Implemented | XML snapshots and fallback helpers exist. Generated archives stay untracked. |
 | Design assets | Available | Figma-derived tokens, fonts, icons, logos, and map assets are committed. |
 | Design helpers | Partial | `src/design/tokens.py` and icon descriptions still contain stubs. |
@@ -31,17 +33,10 @@ from real IMS data. Email and scheduled automation come later.
 
 ## Verification snapshot
 
-The last known green test run was 54 tests passing on 2026-07-15.
-
-On 2026-07-20, a fresh baseline could not reach the tests on the local Windows
-machine:
-
-- The checked-in `.venv` launcher points to a removed Microsoft Store Python.
-- The current bundled Codex Python runtime does not include pytest.
-
-That is an environment failure, not evidence that the tests or application code
-failed. A fresh local environment or `scripts/setup_codex_cloud.sh` should be
-used before the next implementation task. Do not commit `.venv`.
+On 2026-07-20, the offline suite passed 95 tests with the two strict expected
+failures for F-02 and F-03 still present. The run used the isolated audit
+environment and a writable pytest temporary directory. Rendering output was not
+inspected because this slice does not implement or change rendering.
 
 ## Recommended next milestone
 
@@ -75,13 +70,13 @@ capabilities, not baseline assumptions.
 
 ## Refactor progress
 
-The July 2026 refactor now has a protected Slice 0 baseline: shared paths,
-offline IMS fixtures, configuration and asset contracts, advisory tool settings,
-and pull-request CI that runs the offline test suite. Parser defects F-02
-(multi-date fallback selection) and F-03 (incomplete forecasts after invalid
-optional city data) are strictly characterized as temporary expected failures;
-they remain unfixed. Rendering is still unimplemented. See
-[Architecture](ARCHITECTURE.md) for the current boundary.
+The July 2026 refactor now has a protected baseline plus explicit Slice 1
+contracts: an Israel-aware clock, one validated settings load, source snapshot
+and provenance vocabulary, explicit parser inputs, and side-effect-free imports.
+Parser defects F-02 (multi-date fallback selection) and F-03 (incomplete
+forecasts after invalid optional city data) remain strict expected failures.
+Slice 2 must populate provenance and repair fallback behavior. Rendering is
+still unimplemented. See [Architecture](ARCHITECTURE.md) for the current boundary.
 
 ## Source-of-truth order
 

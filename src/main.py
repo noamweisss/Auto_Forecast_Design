@@ -17,15 +17,19 @@ For detailed documentation, see: docs/00_initial_plan.md
 """
 
 import argparse
-import sys
-from datetime import date
 
-# These imports will be implemented in future phases
+from dotenv import load_dotenv
+
+from src.app_paths import AppPaths
+from src.clock import SystemClock
+from src.settings import load_settings
+from src.utils.logger import configure_logging
+
+# The end-to-end workflow imports will be implemented in future phases.
 # from src.data.fetcher import fetch_forecast_data
 # from src.data.parser import parse_forecast
 # from src.rendering.instagram_story import InstagramStoryRenderer
 # from src.delivery.email_sender import send_forecast_email
-# from src.utils.logger import setup_logger
 
 
 def parse_arguments():
@@ -67,8 +71,16 @@ def main():
     This function orchestrates the entire workflow from data fetching
     to email delivery. Each step is logged for debugging purposes.
     """
-    # args = parse_arguments()
-    # logger = setup_logger()
+    paths = AppPaths.from_repository()
+    load_dotenv(dotenv_path=paths.root / ".env", override=False)
+    clock = SystemClock()
+    now = clock.now()
+    configure_logging(paths.logs, now)
+    settings = load_settings(paths)
+
+    # These explicit boundary values will drive the real workflow in a later slice.
+    target_date = now.date()
+    _ = settings, target_date
     
     print("=" * 60)
     print("IMS Daily Forecast Generator")

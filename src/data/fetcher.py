@@ -17,14 +17,12 @@ Usage:
     cities_xml = fetch_cities_forecast()
 """
 
+import logging
 import time
 import requests
 from typing import Optional
 
-from src.utils.logger import get_logger
-
-# Initialize logger for this module
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # IMS XML data URLs
 COUNTRY_FORECAST_URL = "https://ims.gov.il/sites/default/files/ims_data/xml_files/isr_country.xml"

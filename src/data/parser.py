@@ -14,35 +14,27 @@ The parser handles:
 Usage:
     from src.data.parser import parse_country_forecast, parse_cities_forecast
     from src.data.fetcher import fetch_country_forecast, fetch_cities_forecast
+    from src.app_paths import PATHS
+    from src.settings import load_settings
     
+    settings = load_settings(PATHS)
     country_xml = fetch_country_forecast()
-    country_data = parse_country_forecast(country_xml)
+    country_data = parse_country_forecast(country_xml, target_date)
     
     cities_xml = fetch_cities_forecast()
-    cities_data = parse_cities_forecast(cities_xml)
+    cities_data = parse_cities_forecast(cities_xml, target_date, settings=settings)
 """
 
-import json
+import logging
 import re
-from pathlib import Path
 from typing import List, Optional, Tuple
 from datetime import date, datetime
 from lxml import etree
 
-from src.app_paths import PATHS
 from src.data.models import CityForecast, CountryForecast, DailyForecast
-from src.utils.logger import get_logger
+from src.settings import AppSettings
 
-# Initialize logger for this module
-logger = get_logger(__name__)
-
-# Path to weather codes configuration
-WEATHER_CODES_PATH = PATHS.config / "00_ims_weather_codes.json"
-CITIES_CONFIG_PATH = PATHS.config / "cities.json"
-
-# Cache for weather codes (loaded once)
-_weather_codes_cache: Optional[dict] = None
-_cities_config_cache: Optional[dict] = None
+logger = logging.getLogger(__name__)
 
 
 def _normalize_xml_encoding(xml_content: str) -> bytes:
@@ -70,42 +62,7 @@ def _normalize_xml_encoding(xml_content: str) -> bytes:
     return normalized.encode('utf-8')
 
 
-def _load_weather_codes() -> dict:
-    """Load and cache weather codes from JSON config."""
-    global _weather_codes_cache
-    
-    if _weather_codes_cache is None:
-        try:
-            with open(WEATHER_CODES_PATH, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                # Use israel_forecast_codes as primary
-                _weather_codes_cache = data.get("israel_forecast_codes", {})
-                logger.debug(f"Loaded {len(_weather_codes_cache)} weather codes")
-        except Exception as e:
-            logger.error(f"Failed to load weather codes: {e}")
-            _weather_codes_cache = {}
-    
-    return _weather_codes_cache
-
-
-def _load_cities_config() -> dict:
-    """Load and cache cities configuration from JSON."""
-    global _cities_config_cache
-    
-    if _cities_config_cache is None:
-        try:
-            with open(CITIES_CONFIG_PATH, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                _cities_config_cache = data.get("cities", {})
-                logger.debug(f"Loaded {len(_cities_config_cache)} city configurations")
-        except Exception as e:
-            logger.error(f"Failed to load cities config: {e}")
-            _cities_config_cache = {}
-    
-    return _cities_config_cache
-
-
-def _get_weather_description(code: str) -> Tuple[str, str]:
+def _get_weather_description(code: str, settings: AppSettings) -> Tuple[str, str]:
     """
     Look up weather code in configuration and return descriptions.
     
@@ -116,10 +73,8 @@ def _get_weather_description(code: str) -> Tuple[str, str]:
         Tuple of (hebrew_description, english_description)
         Returns ("Unknown", "Unknown") if code not found
     """
-    weather_codes = _load_weather_codes()
-    
-    if code in weather_codes:
-        code_data = weather_codes[code]
+    if code in settings.weather_codes:
+        code_data = settings.weather_codes[code]
         return (code_data.get("hebrew", "לא ידוע"), code_data.get("english", "Unknown"))
     
     # Code not found - this triggers fallback behavior
@@ -127,7 +82,7 @@ def _get_weather_description(code: str) -> Tuple[str, str]:
     return ("לא ידוע", "Unknown")
 
 
-def _get_internal_key(city_id: str) -> str:
+def _get_internal_key(city_id: str, settings: AppSettings) -> str:
     """
     Get the internal key for a city ID from cities.json.
     
@@ -137,16 +92,19 @@ def _get_internal_key(city_id: str) -> str:
     Returns:
         Internal key (e.g., "jerusalem") or lowercase city ID if not found
     """
-    cities_config = _load_cities_config()
-    
-    if city_id in cities_config:
-        return cities_config[city_id].get("internal_key", city_id.lower())
+    if city_id in settings.cities:
+        return settings.cities[city_id].internal_key
     
     logger.warning(f"City ID {city_id} not found in cities.json")
     return city_id.lower()
 
 
-def _get_city_names(city_id: str, xml_name_eng: str, xml_name_heb: str) -> Tuple[str, str]:
+def _get_city_names(
+    city_id: str,
+    xml_name_eng: str,
+    xml_name_heb: str,
+    settings: AppSettings,
+) -> Tuple[str, str]:
     """
     Get standardized city names from config, falling back to XML values.
     
@@ -160,13 +118,9 @@ def _get_city_names(city_id: str, xml_name_eng: str, xml_name_heb: str) -> Tuple
     Returns:
         Tuple of (english_name, hebrew_name)
     """
-    cities_config = _load_cities_config()
-    
-    if city_id in cities_config:
-        config = cities_config[city_id]
-        name_eng = config.get("name_english", xml_name_eng)
-        name_heb = config.get("name_hebrew", xml_name_heb)
-        return (name_eng, name_heb)
+    if city_id in settings.cities:
+        config = settings.cities[city_id]
+        return (config.name_english, config.name_hebrew)
     
     # City not in config, use XML values
     return (xml_name_eng, xml_name_heb)
@@ -219,14 +173,14 @@ def _parse_wind_data(wind_str: str) -> Tuple[Optional[str], Optional[str]]:
 
 def parse_country_forecast(
     xml_content: str,
-    target_date: Optional[date] = None
+    target_date: date,
 ) -> CountryForecast:
     """
     Parse country-wide forecast XML into a CountryForecast object.
     
     Args:
         xml_content: Raw XML string from IMS country forecast
-        target_date: Date to extract forecast for (default: today)
+        target_date: Date to extract forecast for
         
     Returns:
         CountryForecast object with parsed data
@@ -234,9 +188,6 @@ def parse_country_forecast(
     Raises:
         ValueError: If XML parsing fails or no data found for date
     """
-    if target_date is None:
-        target_date = date.today()
-    
     target_date_str = target_date.isoformat()
     
     try:
@@ -286,8 +237,10 @@ def parse_country_forecast(
 
 def parse_cities_forecast(
     xml_content: str,
-    target_date: Optional[date] = None,
-    fallback_xml: Optional[str] = None
+    target_date: date,
+    *,
+    settings: AppSettings,
+    fallback_xml: Optional[str] = None,
 ) -> List[CityForecast]:
     """
     Parse per-city forecast XML into a list of CityForecast objects.
@@ -298,15 +251,13 @@ def parse_cities_forecast(
     
     Args:
         xml_content: Raw XML string from IMS cities forecast
-        target_date: Date to extract forecast for (default: today)
+        target_date: Date to extract forecast for
+        settings: Validated application settings
         fallback_xml: Optional XML content to use for fallback data
         
     Returns:
         List of CityForecast objects, one per city
     """
-    if target_date is None:
-        target_date = date.today()
-    
     target_date_str = target_date.isoformat()
     cities: List[CityForecast] = []
     
@@ -326,7 +277,11 @@ def parse_cities_forecast(
         for location in root.findall("Location"):
             try:
                 city_forecast = _parse_single_city(
-                    location, target_date_str, target_date, fallback_cities
+                    location,
+                    target_date_str,
+                    target_date,
+                    fallback_cities,
+                    settings,
                 )
                 if city_forecast:
                     cities.append(city_forecast)
@@ -384,7 +339,8 @@ def _parse_single_city(
     location,
     target_date_str: str,
     target_date: date,
-    fallback_cities: dict
+    fallback_cities: dict,
+    settings: AppSettings,
 ) -> Optional[CityForecast]:
     """
     Parse a single city's forecast data.
@@ -407,10 +363,12 @@ def _parse_single_city(
     xml_name_english = city_name_eng_elem.text if city_name_eng_elem is not None else ""
     
     # Get standardized names from config (fixes spelling inconsistencies like Elat→Eilat)
-    city_name_english, city_name_hebrew = _get_city_names(city_id, xml_name_english, xml_name_hebrew)
+    city_name_english, city_name_hebrew = _get_city_names(
+        city_id, xml_name_english, xml_name_hebrew, settings
+    )
     
     # Get internal key for design tokens mapping
-    internal_key = _get_internal_key(city_id)
+    internal_key = _get_internal_key(city_id, settings)
     
     # Find forecast data for target date
     location_data = location.find("LocationData")
@@ -418,7 +376,7 @@ def _parse_single_city(
         logger.error(f"No LocationData for city {city_id}")
         return _use_fallback_city(city_id, city_name_hebrew, city_name_english, 
                                   internal_key, target_date, fallback_cities,
-                                  "Missing LocationData")
+                                  "Missing LocationData", settings)
     
     target_time_unit = None
     for time_unit in location_data.findall("TimeUnitData"):
@@ -431,7 +389,7 @@ def _parse_single_city(
         logger.error(f"No data for date {target_date_str} for city {city_id}")
         return _use_fallback_city(city_id, city_name_hebrew, city_name_english,
                                   internal_key, target_date, fallback_cities,
-                                  f"No data for date {target_date_str}")
+                                  f"No data for date {target_date_str}", settings)
     
     # Extract forecast elements
     elements = target_time_unit.findall("Element")
@@ -454,7 +412,11 @@ def _parse_single_city(
         logger.error(f"Missing required fields {missing_fields} for city {city_name_english}")
         return _use_fallback_city(city_id, city_name_hebrew, city_name_english,
                                   internal_key, target_date, fallback_cities,
-                                  f"Missing fields: {missing_fields}")
+                                  f"Missing fields: {missing_fields}", settings)
+
+    assert max_temp_str is not None
+    assert min_temp_str is not None
+    assert weather_code is not None
     
     # Parse temperature values
     try:
@@ -464,15 +426,15 @@ def _parse_single_city(
         logger.error(f"Invalid temperature values for {city_name_english}: {e}")
         return _use_fallback_city(city_id, city_name_hebrew, city_name_english,
                                   internal_key, target_date, fallback_cities,
-                                  f"Invalid temperature: {e}")
+                                  f"Invalid temperature: {e}", settings)
     
     # Get weather description (check for unknown code)
-    weather_hebrew, weather_english = _get_weather_description(weather_code)
+    weather_hebrew, weather_english = _get_weather_description(weather_code, settings)
     if weather_hebrew == "לא ידוע":
         logger.warning(f"Unknown weather code '{weather_code}' for {city_name_english}. Using yesterday's data.")
         return _use_fallback_city(city_id, city_name_hebrew, city_name_english,
                                   internal_key, target_date, fallback_cities,
-                                  f"Unknown weather code: {weather_code}")
+                                  f"Unknown weather code: {weather_code}", settings)
     
     # Extract optional fields
     humidity_max_str = _extract_element_value(elements, "Maximum relative humidity")
@@ -509,7 +471,8 @@ def _use_fallback_city(
     internal_key: str,
     target_date: date,
     fallback_cities: dict,
-    reason: str
+    reason: str,
+    settings: AppSettings,
 ) -> Optional[CityForecast]:
     """
     Create a CityForecast using fallback data.
@@ -541,6 +504,10 @@ def _use_fallback_city(
     if not all([max_temp_str, min_temp_str, weather_code]):
         logger.error(f"Fallback data also incomplete for {city_name_english}")
         return None
+
+    assert max_temp_str is not None
+    assert min_temp_str is not None
+    assert weather_code is not None
     
     try:
         max_temp = int(max_temp_str)
@@ -549,7 +516,7 @@ def _use_fallback_city(
         logger.error(f"Fallback data has invalid temperatures for {city_name_english}")
         return None
     
-    weather_hebrew, weather_english = _get_weather_description(weather_code)
+    weather_hebrew, weather_english = _get_weather_description(weather_code, settings)
     
     # Extract optional fields
     humidity_max_str = _extract_element_value(elements, "Maximum relative humidity")
@@ -582,8 +549,10 @@ def _use_fallback_city(
 def parse_daily_forecast(
     country_xml: str,
     cities_xml: str,
-    target_date: Optional[date] = None,
-    fallback_cities_xml: Optional[str] = None
+    target_date: date,
+    *,
+    settings: AppSettings,
+    fallback_cities_xml: Optional[str] = None,
 ) -> DailyForecast:
     """
     Parse both XML sources into a complete DailyForecast.
@@ -594,22 +563,25 @@ def parse_daily_forecast(
     Args:
         country_xml: Raw XML from country forecast
         cities_xml: Raw XML from cities forecast
-        target_date: Date to extract (default: today)
+        target_date: Date to extract
+        settings: Validated application settings
         fallback_cities_xml: Optional XML for city fallback data
         
     Returns:
         DailyForecast object containing everything needed for image generation
     """
-    if target_date is None:
-        target_date = date.today()
-    
     logger.info(f"Parsing daily forecast for {target_date}")
     
     # Parse country forecast
     country_forecast = parse_country_forecast(country_xml, target_date)
     
     # Parse city forecasts with fallback
-    city_forecasts = parse_cities_forecast(cities_xml, target_date, fallback_cities_xml)
+    city_forecasts = parse_cities_forecast(
+        cities_xml,
+        target_date,
+        settings=settings,
+        fallback_xml=fallback_cities_xml,
+    )
     
     # Check how many cities used fallback
     fallback_count = sum(1 for c in city_forecasts if c.is_fallback)
@@ -627,7 +599,10 @@ def parse_daily_forecast(
 
 # Allow running this module directly for testing
 if __name__ == "__main__":
+    from src.app_paths import PATHS
+    from src.clock import SystemClock
     from src.data.fetcher import fetch_cities_forecast, fetch_country_forecast
+    from src.settings import load_settings
     
     print("Testing XML parser...")
     print("-" * 50)
@@ -635,10 +610,17 @@ if __name__ == "__main__":
     # Fetch live data
     country_xml = fetch_country_forecast()
     cities_xml = fetch_cities_forecast()
+    settings = load_settings(PATHS)
+    target_date = SystemClock().now().date()
     
     if country_xml and cities_xml:
         try:
-            forecast = parse_daily_forecast(country_xml, cities_xml)
+            forecast = parse_daily_forecast(
+                country_xml,
+                cities_xml,
+                target_date,
+                settings=settings,
+            )
             print(f"\n✓ Parsed forecast for {forecast.forecast_date}")
             print(f"  Country description: {forecast.country_forecast.description_hebrew[:50]}...")
             print(f"  Cities parsed: {len(forecast.city_forecasts)}")

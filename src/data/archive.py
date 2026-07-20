@@ -24,14 +24,12 @@ Usage:
 """
 
 from datetime import date, timedelta
+import logging
 from pathlib import Path
 from typing import Optional, Tuple
 
 from src.app_paths import PATHS
-from src.utils.logger import get_logger
-
-# Initialize logger for this module
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Configuration
 ARCHIVE_DIR = PATHS.archive
@@ -180,7 +178,7 @@ def cleanup_old_archives() -> int:
                 deleted_count += 1
                 logger.debug(f"Deleted old archive: {xml_file}")
                 
-        except (ValueError, IndexError) as e:
+        except (ValueError, IndexError):
             # Skip files that don't match expected naming pattern
             logger.warning(f"Skipping archive file with unexpected name: {xml_file}")
             continue

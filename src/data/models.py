@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional, List
 
+from src.data.snapshots import ForecastProvenance
+
 
 @dataclass
 class CityForecast:
@@ -65,6 +67,7 @@ class CityForecast:
     
     # Fallback indicator - True if this city's data came from archive
     is_fallback: bool = False
+    provenance: Optional[ForecastProvenance] = None
     
     def __post_init__(self):
         """
@@ -111,6 +114,7 @@ class CountryForecast:
     description_english: str
     warning_hebrew: Optional[str] = None
     warning_english: Optional[str] = None
+    provenance: Optional[ForecastProvenance] = None
 
 
 @dataclass

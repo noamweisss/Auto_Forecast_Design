@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an Israel-aware application clock and a small snapshot/provenance vocabulary for later fallback work.
+- Added one validated, immutable settings load for cities, Israel weather codes, and design tokens, including cross-file city-position checks.
+- Added import-safety and outside-repository subprocess coverage, plus `tzdata` for reliable `Asia/Jerusalem` support on Windows and minimal environments.
 - Added sanitized, committed IMS XML fixtures, baseline asset contracts, and an offline pull-request CI workflow.
 - Added strict temporary characterization tests for parser defects F-02 and F-03; the defects remain unfixed.
 - Added modest Ruff and Mypy advisory configuration for Python 3.11.
@@ -22,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- City and daily parsers now receive validated settings explicitly; all parsers receive an explicit target date and fallback XML remains keyword-only.
+- Logging and `.env` loading now happen explicitly in `main()`; importing library modules no longer creates log files or loads environment files.
+- Added optional forecast provenance fields as a migration bridge. Snapshot population and fallback truthfulness remain deferred to the next slice.
 - Anchored parser, archive, output, log, token, and icon paths to the repository instead of the shell working directory.
 - Corrected README claims so unfinished rendering, email, and automation are
   clearly distinguished from implemented data work.

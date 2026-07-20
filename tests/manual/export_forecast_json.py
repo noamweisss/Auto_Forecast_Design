@@ -13,15 +13,17 @@ Output:
 
 import json
 import sys
-from datetime import date
 from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.data.fetcher import fetch_cities_forecast, fetch_country_forecast
-from src.data.parser import parse_daily_forecast
+from src.data.fetcher import fetch_cities_forecast, fetch_country_forecast  # noqa: E402
+from src.data.parser import parse_daily_forecast  # noqa: E402
+from src.app_paths import AppPaths  # noqa: E402
+from src.clock import SystemClock  # noqa: E402
+from src.settings import load_settings  # noqa: E402
 
 # Output directory
 OUTPUT_DIR = Path(__file__).parent / "output"
@@ -82,6 +84,10 @@ def main():
     print("=" * 60)
     print()
     
+    paths = AppPaths.from_repository()
+    settings = load_settings(paths)
+    target_date = SystemClock().now().date()
+
     # Fetch data
     print("Fetching data from IMS...")
     country_xml = fetch_country_forecast()
@@ -93,7 +99,12 @@ def main():
     
     # Parse data
     print("Parsing XML data...")
-    forecast = parse_daily_forecast(country_xml, cities_xml)
+    forecast = parse_daily_forecast(
+        country_xml,
+        cities_xml,
+        target_date,
+        settings=settings,
+    )
     
     # Convert to dictionary
     data = forecast_to_dict(forecast)

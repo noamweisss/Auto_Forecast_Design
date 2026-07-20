@@ -1,107 +1,48 @@
-"""
-Logger - Logging Configuration
+"""Explicit logging setup for the application boundary.
 
-This module sets up a consistent logging format across the project.
-Logs help you understand what the program is doing and debug issues.
-
-Log Levels (from least to most severe):
-    DEBUG   - Detailed information for debugging
-    INFO    - Confirmation that things are working
-    WARNING - Something unexpected, but program continues
-    ERROR   - Something failed, but program continues
-    CRITICAL - Serious error, program may need to stop
-
-Log Output:
-    - Console (stdout) - for immediate feedback
-    - File (logs/forecast.log) - for historical record
-
-Usage:
-    from src.utils.logger import get_logger
-    
-    logger = get_logger(__name__)
-    logger.info("Starting forecast generation...")
-    logger.error("Failed to fetch XML: %s", error_message)
+Library modules use ``logging.getLogger(__name__)``. Importing them therefore
+does not create directories or files; ``main()`` opts into file logging here.
 """
 
-import logging
-import sys
-from pathlib import Path
 from datetime import datetime
+import logging
+from pathlib import Path
+import sys
 
-from src.app_paths import PATHS
 
-# Logs directory
-LOGS_DIR = PATHS.logs
-
-# Log format: timestamp - level - module - message
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+_HANDLER_MARKER = "_ims_forecast_handler"
 
 
-def setup_logger(
-    name: str = "forecast",
-    level: int = logging.INFO,
-    log_to_file: bool = True
+def configure_logging(
+    log_dir: Path,
+    now: datetime,
+    log_to_file: bool = True,
 ) -> logging.Logger:
-    """
-    Set up and return a configured logger.
-    
-    Args:
-        name: Logger name (usually __name__ of the calling module)
-        level: Logging level (default: INFO)
-        log_to_file: Whether to also log to a file (default: True)
-        
-    Returns:
-        Configured logger instance
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    
-    # Avoid adding handlers multiple times
-    if logger.handlers:
-        return logger
-    
-    # Create formatters
+    """Configure console and optional file logging for one application run."""
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    for handler in list(root_logger.handlers):
+        if getattr(handler, _HANDLER_MARKER, False):
+            root_logger.removeHandler(handler)
+            handler.close()
+
     formatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
-    
-    # === Console Handler ===
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(level)
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-    
-    # === File Handler ===
+    setattr(console_handler, _HANDLER_MARKER, True)
+    root_logger.addHandler(console_handler)
+
     if log_to_file:
-        LOGS_DIR.mkdir(exist_ok=True)
-        
-        # Log filename includes date for easy organization
-        log_filename = f"forecast_{datetime.now().strftime('%Y-%m-%d')}.log"
-        file_handler = logging.FileHandler(
-            LOGS_DIR / log_filename,
-            encoding="utf-8"  # Important for Hebrew text in logs
-        )
-        file_handler.setLevel(level)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"forecast_{now:%Y-%m-%d}.log"
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-    
-    return logger
+        setattr(file_handler, _HANDLER_MARKER, True)
+        root_logger.addHandler(file_handler)
 
-
-def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger instance for a module.
-    
-    This is a convenience function that returns an existing logger
-    or creates a new one with default settings.
-    
-    Args:
-        name: Logger name (typically pass __name__)
-        
-    Returns:
-        Logger instance
-        
-    Usage:
-        logger = get_logger(__name__)
-        logger.info("Processing started")
-    """
-    return setup_logger(name)
+    return root_logger
