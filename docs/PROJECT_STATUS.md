@@ -15,6 +15,7 @@ from real IMS data. Email and scheduled automation come later.
 
 | Layer | State | What that means |
 | --- | --- | --- |
+| Shared paths | Implemented | `src/app_paths.py` anchors repository paths so commands do not depend on the shell directory. |
 | Data models | Implemented | Forecast objects and validation exist in `src/data/models.py`. |
 | IMS fetching | Implemented | Country and city XML can be downloaded with retry and encoding handling. |
 | XML parsing | Implemented | XML is converted to forecast objects using committed city and weather-code data. |
@@ -71,6 +72,10 @@ The repository now keeps remote work reproducible through:
 Cloud agents should work from committed assets and `config/design_tokens.json`.
 Live Figma, Gmail, IMS network access, and local MCP servers are optional task
 capabilities, not baseline assumptions.
+
+## Refactor progress
+
+The July 2026 refactor has started with a small foundation slice: shared repository paths, pytest/tool configuration, and tests that keep city configuration aligned with the design positions. This does not yet fix parser fallback semantics or implement rendering. See [Architecture](ARCHITECTURE.md) for the current boundary.
 
 ## Source-of-truth order
 

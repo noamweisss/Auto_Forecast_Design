@@ -28,8 +28,10 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+from src.app_paths import PATHS
+
 # Logs directory
-LOGS_DIR = Path("logs")
+LOGS_DIR = PATHS.logs
 
 # Log format: timestamp - level - module - message
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"

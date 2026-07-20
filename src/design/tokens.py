@@ -22,8 +22,10 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+from src.app_paths import PATHS
+
 # Path to design tokens file
-TOKENS_FILE = Path("config/design_tokens.json")
+TOKENS_FILE = PATHS.config / "design_tokens.json"
 
 # Cache for loaded tokens
 _tokens_cache: Optional[Dict[str, Any]] = None

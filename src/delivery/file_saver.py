@@ -27,13 +27,14 @@ from typing import Dict, Optional
 
 from PIL import Image
 
+from src.app_paths import PATHS
 from src.utils.logger import get_logger
 
 # Initialize logger for this module
 logger = get_logger(__name__)
 
 # Output directory
-OUTPUT_DIR = Path("output")
+OUTPUT_DIR = PATHS.output
 
 # Default cleanup age
 DEFAULT_MAX_AGE_DAYS = 30

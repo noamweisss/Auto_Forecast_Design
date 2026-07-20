@@ -16,8 +16,10 @@ Usage:
 from pathlib import Path
 from typing import Tuple, Optional
 
+from src.app_paths import PATHS
+
 # Path to weather icons folder
-ICONS_DIR = Path("assets/Weather_Icons")
+ICONS_DIR = PATHS.assets / "Weather_Icons"
 
 # Mapping from IMS weather codes to icon filenames
 # Based on docs/00_ims_weather_codes.json

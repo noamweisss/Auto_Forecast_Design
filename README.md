@@ -123,6 +123,7 @@ browser while setup-time internet access is available.
 
 - [AGENTS.md](AGENTS.md) is the durable guide for local and cloud coding agents.
 - [Project Status](docs/PROJECT_STATUS.md) is the current implementation map.
+- [Architecture](docs/ARCHITECTURE.md) explains the current small-layer structure and shared paths.
 - [Initial Plan](docs/00_initial_plan.md) is historical architecture context.
 - [Phase 2 Plan](docs/01_phase2_data_pipeline_plan.md) documents the data work.
 - [Folder Structure](docs/99_folder_structure.md) is a historical navigation aid.

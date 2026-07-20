@@ -29,6 +29,7 @@ from typing import List, Optional, Tuple
 from datetime import date, datetime
 from lxml import etree
 
+from src.app_paths import PATHS
 from src.data.models import CityForecast, CountryForecast, DailyForecast
 from src.utils.logger import get_logger
 
@@ -36,8 +37,8 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 # Path to weather codes configuration
-WEATHER_CODES_PATH = Path("config/00_ims_weather_codes.json")
-CITIES_CONFIG_PATH = Path("config/cities.json")
+WEATHER_CODES_PATH = PATHS.config / "00_ims_weather_codes.json"
+CITIES_CONFIG_PATH = PATHS.config / "cities.json"
 
 # Cache for weather codes (loaded once)
 _weather_codes_cache: Optional[dict] = None

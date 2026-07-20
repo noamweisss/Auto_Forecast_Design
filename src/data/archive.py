@@ -27,13 +27,14 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional, Tuple
 
+from src.app_paths import PATHS
 from src.utils.logger import get_logger
 
 # Initialize logger for this module
 logger = get_logger(__name__)
 
 # Configuration
-ARCHIVE_DIR = Path("archive")
+ARCHIVE_DIR = PATHS.archive
 MAX_ARCHIVE_DAYS = 7
 
 
