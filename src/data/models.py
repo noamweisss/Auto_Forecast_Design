@@ -66,6 +66,8 @@ class CountryForecast:
             raise ValueError("country provenance is required")
         if self.provenance.feed_type is not FeedType.COUNTRY:
             raise ValueError("country provenance must use the country feed")
+        if not self.description_hebrew or not self.description_hebrew.strip():
+            raise ValueError("country description_hebrew is required")
 
     @property
     def is_fallback(self) -> bool:

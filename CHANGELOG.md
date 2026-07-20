@@ -104,6 +104,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Treated an empty or whitespace-only IMS success body as a structured `DECODE`
+  fetch failure instead of letting it raise an uncaught error, so the documented
+  fetch contract and archive fallback still hold.
+- Rejected empty Hebrew country text at the `CountryForecast` model boundary and
+  rejected duplicate exact-date `TimeUnitData` in country and city parsing, so
+  malformed source data fails loudly rather than silently taking the first match.
 - Fixed F-02: an older snapshot may supply values only for the exact requested date; another day's values are never relabelled.
 - Fixed F-03: invalid city data now falls back per city or raises one actionable error instead of returning fewer than 15 configured cities.
 - Reject missing/duplicate configured cities, invalid temperatures, unknown weather codes, malformed humidity/wind, and missing Hebrew country text.

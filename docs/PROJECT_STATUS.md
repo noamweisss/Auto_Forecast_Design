@@ -1,115 +1,76 @@
 # Project Status
 
-Last reviewed: 2026-07-21
+Last reviewed: 2026-07-20
 
-This page is the practical restart map for someone returning to the repository
-after a long gap. It separates executable code from plans and placeholders.
+This is the restart map for anyone returning to the repository after a gap. It
+separates working code from plans and placeholders. When files disagree, trust
+source code and tests first, then `AGENTS.md` and this page, then `README.md`,
+then historical plans and the changelog.
 
 ## The short version
 
-The project now runs one thin path from exact-date IMS data through the checked
-Story renderer to one atomic 1080x1920 PNG. Fixture mode proves the complete path
-offline with local sample data. On 2026-07-21, live mode also generated the image
-from the current official country and city feeds without archive fallback. Email
-and scheduled automation remain separate future work.
+One command turns exact-date IMS data into one atomic 1080x1920 PNG:
+
+```bash
+python -m src.main --source fixture   # deterministic offline demo
+python -m src.main --source live      # current official IMS feeds
+```
+
+Fixture mode proves the whole path offline with committed sample data. Live mode
+fetches the real country and city feeds and applies the same exact-date and
+15-city rules. Email and scheduled automation are still future work.
 
 ## Layer-by-layer state
 
-| Layer | State | What that means |
+| Layer | State | Meaning |
 | --- | --- | --- |
-| Shared paths | Implemented | `src/app_paths.py` anchors repository paths so commands do not depend on the shell directory. |
-| Clock and settings boundary | Implemented | `main()` establishes paths, local `.env`, Israel time, logging, and one validated immutable settings load in that order. |
-| Data models | Implemented | Every country/city value has required source provenance; a daily forecast is rejected unless it has one date and 15 unique cities. |
-| IMS fetching | Implemented | Country and city acquisition returns either decoded XML or a structured failure with its exact attempt count. |
-| XML parsing | Implemented | Ordered snapshots are resolved for one exact date. Each city may independently fall back, but incomplete or invalid data fails the whole forecast. |
-| Validated snapshots | Implemented | IMS XML can be sealed with its real issue time, fetch time, feed, and complete forecast-date set. This proves source structure, not publishability. |
-| Snapshot store | Implemented | Valid snapshots are atomically stored as UTF-8 JSON and selected by metadata within an explicit seven-day window. |
-| Design assets | Validated | The complete SVG map/logos, 23 catalog-selected icons, and Black/SemiBold fonts are checked before rendering. |
-| Story render context | Implemented | One frozen packing list supplies exact header text, 15 physical city positions, temperatures, icon/file URIs, and fallback state. |
-| Frozen visual reference | Available | A verified 1080x1920 Figma export, sanitized matching forecast, and exact metadata/hashes provide an offline target without live Figma access. |
-| HTML/CSS template | Implemented | Literal RTL HTML/CSS reproduces the frozen Story geometry with physical top-left city coordinates and committed local assets. |
-| Playwright renderer | Implemented | A strict Jinja render becomes a checked 1080x1920 PNG; browser, page, asset, font, layout, screenshot, and PNG failures are actionable. |
-| Image saving | Implemented | Checked 1080x1920 PNG bytes are published through a flushed, fsynced temporary file and atomic replace. |
-| Email delivery | Placeholder | Configuration validation exists, but message construction and sending are stubs. |
-| Main workflow | Implemented | `python -m src.main` runs fixture or live source selection, exact-date parsing, context building, Chromium rendering, and one local PNG. |
-| Automation | Partial | Pull requests run offline tests plus real-Chromium renderer and fixture-to-PNG smoke tests. No daily production workflow exists. |
+| Shared paths (`src/app_paths.py`) | Implemented | Repository paths are anchored to the source tree, not the shell directory. |
+| Clock + settings boundary | Implemented | `main()` sets up paths, `.env`, Israel time, logging, and one immutable settings load. |
+| Data models | Implemented | Every value carries source provenance; a daily forecast needs one date and 15 unique cities. |
+| IMS fetching | Implemented | Returns decoded XML or a structured failure with its exact attempt count. |
+| XML parsing | Implemented | Resolves ordered snapshots for one exact date; incomplete or invalid data fails the whole forecast. |
+| Snapshots + store | Implemented | IMS feeds are sealed with issue/fetch time and atomically stored as UTF-8 JSON, selected by metadata within a seven-day window. |
+| Design assets + context | Implemented | The SVG map/logos, catalog icons, and fonts are checked, then packed into one frozen render context. |
+| Visual reference | Available | A committed 1080x1920 Figma export of node `1:2` plus a sanitized matching forecast give an offline target without live Figma. |
+| HTML/CSS template + renderer | Implemented | Strict Jinja fills the RTL template; Playwright checks fonts, images, geometry, and PNG dimensions before output. |
+| Image saving | Implemented | Validated PNG bytes are published through a flushed, fsynced temporary file and atomic replace. |
+| Email delivery | Placeholder | Configuration validation exists; message construction and sending are stubs. |
+| Automation | Partial | PRs run offline tests plus a real-Chromium render smoke test. No daily production workflow exists. |
 
-## Verification snapshot
+## Verification
 
-On 2026-07-21, the full suite passed 241 tests with no expected failures.
-The normal passing regressions for F-02 and F-03 prove exact-date fallback and
-complete 15-city output. The run used the isolated audit environment and a
-writable pytest temporary directory, including 10 browser tests with installed
-Chromium. The frozen reference, rendered PNG, overlay, and amplified difference
-were inspected at normal size. The visual gate passed: canvas, orientation,
-map, logos, city relationships, Hebrew, numeric bidi, and hierarchy had no hard
-blocker. Small glyph and SVG edge differences were accepted as cross-engine
-antialiasing. Reference dimensions, bytes, SHA-256, matching fixture, and local
-asset hashes remain enforced offline.
-The Story deliberately uses Figma's visible Hebrew label `תל אביב` for city
-402. Its stable ID, `tel_aviv` internal key, English/source identity
-`Tel Aviv - Yafo`, and IMS forecast data remain unchanged.
+On 2026-07-20 the offline suite passed (232 passed, 9 skipped) with `ruff` and
+`mypy src` clean. The browser render path is covered by the fixture-to-PNG smoke
+test, which runs against real Chromium in CI.
+
+Automated contracts guard exact reference bytes, dimensions, provenance
+metadata, fixture content, and hydrated asset hashes. They do not replace human
+visual review: after renderer changes, open the actual 1080x1920 output at
+normal size and compare it with `docs/design-reference/`.
+
+The Story deliberately shows Figma's visible Hebrew label `תל אביב` for city
+402. Its stable ID, `tel_aviv` internal key, `Tel Aviv - Yafo` English identity,
+and IMS data are unchanged.
 
 ## Recommended next milestone
 
-Turn the working local command into a useful daily routine:
+Turn the working local command into a daily routine:
 
-1. Decide whether the next step is scheduled generation, email delivery, or both.
+1. Decide whether scheduled generation, email delivery, or both come next.
 2. Add credentials only through environment settings; never commit them.
-3. Keep generated images and fetched XML outside Git, as they are today.
-4. Refine the first live design later if the media team wants visual changes.
-
-The local generator is now a real starting point for that work, not a placeholder.
+3. Keep generated images and fetched XML out of Git, as they are today.
+4. Refine the live design later if the media team wants visual changes.
 
 ## Codex cloud readiness
 
-The repository now keeps remote work reproducible through:
+Remote work stays reproducible through a committed `AGENTS.md`,
+`scripts/setup_codex_cloud.sh`, `.env.example` (names only), Git LFS rules with
+setup/CI hydration checks, a render-smoke CI job that cannot silently skip
+browser tests, and ignore rules for generated forecasts, fetched XML,
+credentials, caches, and local environments.
 
-- A committed root `AGENTS.md` with exact checks and completion rules.
-- `scripts/setup_codex_cloud.sh` for Python dependencies and Chromium.
-- `.env.example` with names only and no credentials.
-- Git LFS rules plus setup/CI hydration checks for fonts and binary design
-  assets.
-- A pull-request render-smoke job that installs Chromium and cannot silently
-  skip browser-marked renderer tests.
-- Ignore rules for generated forecasts, fetched XML, credentials, caches, local
-  environments, private journals, and machine-specific agent files.
+Cloud agents work from committed assets and `config/design_tokens.json`. Live
+Figma, Gmail, and IMS network access are optional, not baseline assumptions.
 
-Cloud agents should work from committed assets and `config/design_tokens.json`.
-Live Figma, Gmail, IMS network access, and local MCP servers are optional task
-capabilities, not baseline assumptions.
-
-## Refactor progress
-
-The July 2026 refactor now has a trustworthy data boundary: structured fetch
-failures, validated time-stamped IMS snapshots, atomic JSON records, exact-date
-archive lookup, strict parsing, and required provenance. F-02 and F-03 are
-repaired. An older *download* may safely help when its multi-day XML still
-contains the exact future day requested. Values for yesterday are never renamed
-as today's forecast.
-The design boundary now also produces one validated Story render context. It
-uses the verified 1080x1920 canvas, keeps all city x/y coordinates physical
-from the top-left (never RTL-mirrored), formats the exact Hebrew-calendar
-header, and refuses missing or unhydrated local assets before a browser opens.
-The repository now also carries the exact Figma node `1:2` export and matching
-sanitized mock forecast as an offline visual oracle. The checked renderer uses
-that context to produce deterministic PNG bytes and refuses incomplete browser
-state, assets, fonts, or geometry. This makes layout work reproducible without
-claiming that the mock values are a real IMS forecast. A thin application now
-obtains fixture or live candidates, parses one exact-date forecast, builds the
-context, renders PNG bytes, and atomically publishes one canonical output. It
-recognizes the observed IMS morning and evening envelopes while preserving the
-same exact-date and 15-city publication rules. The 2026-07-21 live run completed
-without archive fallback. See [Architecture](ARCHITECTURE.md).
-
-## Source-of-truth order
-
-When files disagree, use this order:
-
-1. Current source code and tests.
-2. `AGENTS.md` and this page.
-3. `README.md`.
-4. Historical plans and changelog entries.
-
-Update this page whenever a layer changes between implemented, partial, and
+Update this page whenever a layer moves between implemented, partial, and
 placeholder.

@@ -138,6 +138,25 @@ def test_retryable_failures_use_all_attempts_and_preserve_final_reason(
     assert sleeps == [1, 2]
 
 
+@pytest.mark.parametrize("body", [b"", b"   \n\t "])
+def test_empty_success_body_becomes_decode_failure_not_a_crash(body):
+    request_get = ResponseSequence(FakeResponse(body), FakeResponse(body))
+    sleeps = []
+
+    result = fetch_feed(
+        FeedType.COUNTRY,
+        request_get=request_get,
+        sleep=sleeps.append,
+        retry_delays=(1,),
+    )
+
+    assert result.succeeded is False
+    assert result.failure is not None
+    assert result.failure.kind is FetchFailureKind.DECODE
+    assert result.attempt_count == 2
+    assert sleeps == [1]
+
+
 def test_4xx_stops_immediately_without_sleeping():
     request_get = ResponseSequence(FakeResponse(b"not found", status_code=404))
     sleeps = []

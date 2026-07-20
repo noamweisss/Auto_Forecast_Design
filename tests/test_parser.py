@@ -150,6 +150,20 @@ def _mutated_cities(kind: str) -> str:
     return _xml(root)
 
 
+def _country_duplicate_date() -> str:
+    root = _root(load_ims_fixture("country_forecast.xml"))
+    location_data = root.find("Location/LocationData")
+    location_data.append(deepcopy(_time_unit(root.find("Location"))))
+    return _xml(root)
+
+
+def _cities_duplicate_date() -> str:
+    root = _root(load_ims_fixture("cities_forecast.xml"))
+    eilat = _city(root)
+    eilat.find("LocationData").append(deepcopy(_time_unit(eilat)))
+    return _xml(root)
+
+
 def _country_without_hebrew() -> str:
     root = _root(load_ims_fixture("country_forecast.xml"))
     time_unit = _time_unit(root.find("Location"))
@@ -261,6 +275,20 @@ def test_daily_parser_reports_incomplete_settings_as_forecast_data_error(app_set
             TARGET_DATE,
             settings=incomplete_settings,
         )
+
+
+def test_country_rejects_duplicate_exact_date_values():
+    snapshot = _snapshot(FeedType.COUNTRY, xml=_country_duplicate_date())
+
+    with pytest.raises(ForecastDataError, match="duplicate country values"):
+        parse_country_forecast([snapshot], TARGET_DATE)
+
+
+def test_city_rejects_duplicate_exact_date_values(app_settings):
+    snapshot = _snapshot(FeedType.CITIES, xml=_cities_duplicate_date())
+
+    with pytest.raises(ForecastDataError, match="duplicate values for exact date"):
+        parse_cities_forecast([snapshot], TARGET_DATE, settings=app_settings)
 
 
 def test_candidate_with_only_another_date_is_not_relabelled(app_settings):

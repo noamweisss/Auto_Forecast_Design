@@ -207,10 +207,16 @@ def _parse_snapshot_xml(xml: str):
 
 def _country_time_unit(root, target_date: date):
     target = target_date.isoformat()
-    for time_unit in root.findall("Location/LocationData/TimeUnitData"):
-        if (time_unit.findtext("Date") or "").strip() == target:
-            return time_unit
-    raise ForecastDataError(f"no country values for exact date {target}")
+    matches = [
+        time_unit
+        for time_unit in root.findall("Location/LocationData/TimeUnitData")
+        if (time_unit.findtext("Date") or "").strip() == target
+    ]
+    if not matches:
+        raise ForecastDataError(f"no country values for exact date {target}")
+    if len(matches) > 1:
+        raise ForecastDataError(f"duplicate country values for exact date {target}")
+    return matches[0]
 
 
 def _parse_city_candidate(
@@ -241,6 +247,10 @@ def _parse_city_candidate(
     ]
     if not time_units:
         raise ForecastDataError(f"city {city_settings.id} has no values for exact date {target}")
+    if len(time_units) > 1:
+        raise ForecastDataError(
+            f"city {city_settings.id} has duplicate values for exact date {target}"
+        )
     elements = time_units[0].findall("Element")
 
     min_temp = _required_int(elements, "Minimum temperature", city_settings.id)

@@ -100,7 +100,6 @@ def generate_forecast_image(
     """Generate exactly one complete exact-date Story PNG."""
     _require_aware(now)
 
-    # 1. Obtain preferred-first country and city snapshot candidates.
     candidates, failure_reasons = _obtain_candidates(
         request,
         paths=paths,
@@ -109,7 +108,6 @@ def generate_forecast_image(
         snapshot_store=snapshot_store,
     )
 
-    # 2. Parse one complete forecast for the requested date, never a nearby day.
     try:
         forecast = parse_daily_forecast(
             candidates[FeedType.COUNTRY],
@@ -121,19 +119,16 @@ def generate_forecast_image(
     except ForecastDataError as error:
         raise ForecastRunError(RunStage.FORECAST, str(error)) from error
 
-    # 3. Build the checked, template-ready Story packing list.
     try:
         context = build_story_render_context(forecast, settings, paths)
     except RenderContextError as error:
         raise ForecastRunError(RunStage.RENDER, str(error)) from error
 
-    # 4. Render one canonical 1080x1920 PNG in Chromium.
     try:
         png_bytes = renderer.render(context)
     except TemplateRenderError as error:
         raise ForecastRunError(RunStage.RENDER, str(error)) from error
 
-    # 5. Publish that PNG atomically at its canonical date-based path.
     try:
         output_path = save_png_fn(
             png_bytes,
@@ -143,7 +138,6 @@ def generate_forecast_image(
     except OutputSaveError as error:
         raise ForecastRunError(RunStage.OUTPUT, str(error)) from error
 
-    # 6. Return only the short facts a caller needs for a success summary.
     fallback_value_count = int(forecast.country_forecast.is_fallback) + sum(
         city.is_fallback for city in forecast.city_forecasts
     )

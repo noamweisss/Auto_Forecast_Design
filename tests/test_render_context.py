@@ -180,10 +180,9 @@ def test_invalid_positions_fail_before_rendering(change, message, app_settings):
 
 def test_missing_country_hebrew_text_fails_before_rendering(app_settings):
     forecast = _forecast(app_settings)
-    forecast.country_forecast = replace(
-        forecast.country_forecast,
-        description_hebrew="  ",
-    )
+    # The model boundary already rejects blank Hebrew; mutate past it to prove the
+    # render context is an independent second guard.
+    forecast.country_forecast.description_hebrew = "  "
 
     with pytest.raises(RenderContextError, match="country Hebrew description"):
         build_story_render_context(forecast, app_settings, PATHS)

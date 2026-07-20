@@ -59,6 +59,12 @@ def _cities() -> list[CityForecast]:
     return [_city(str(index)) for index in range(15)]
 
 
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_country_forecast_rejects_blank_hebrew_description(blank):
+    with pytest.raises(ValueError, match="description_hebrew is required"):
+        replace(_country(), description_hebrew=blank)
+
+
 def test_daily_forecast_rejects_fourteen_cities():
     with pytest.raises(ValueError, match="exactly 15"):
         DailyForecast(TARGET_DATE, _country(), _cities()[:14])

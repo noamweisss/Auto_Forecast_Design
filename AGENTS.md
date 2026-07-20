@@ -32,9 +32,8 @@ may be stale.
   PNG renderer are implemented and covered by structural and browser tests.
 - Fixture mode is a deterministic offline demo using committed sanitized IMS-shaped
   samples; live mode uses fetched IMS data and never shifts the requested date.
-- The 2026-07-21 live acceptance generated one complete 1080x1920 PNG from the
-  official feeds. Morning and evening feed envelopes are both validated without
-  changing the requested forecast date.
+  Both morning and evening feed envelopes are validated without changing the
+  requested forecast date.
 - Email delivery still contains stubs.
 - No production GitHub Actions workflow exists yet.
 - Figma-derived tokens and local design assets are committed, so ordinary work

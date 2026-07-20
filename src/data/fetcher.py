@@ -122,12 +122,18 @@ def fetch_feed(
                 retryable = status_code >= 500
             else:
                 xml = _decode_xml(response.content)
-                return FetchResult(
-                    feed_type=feed_type,
-                    url=url,
-                    attempt_count=attempt_count,
-                    xml=xml,
-                )
+                if not xml.strip():
+                    final_failure = FetchFailure(
+                        FetchFailureKind.DECODE,
+                        "IMS returned an empty response body",
+                    )
+                else:
+                    return FetchResult(
+                        feed_type=feed_type,
+                        url=url,
+                        attempt_count=attempt_count,
+                        xml=xml,
+                    )
         except requests.exceptions.Timeout as error:
             final_failure = FetchFailure(
                 FetchFailureKind.TIMEOUT,
