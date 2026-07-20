@@ -25,6 +25,9 @@ python-dotenv>=1.0.0
 # IANA timezone data for ZoneInfo on Windows and minimal containers
 tzdata>=2025.2
 
+# Hebrew calendar formatting for the verified Story header
+pyluach>=2.3,<3
+
 
 # === HTML Rendering Support ===
 
@@ -33,13 +36,6 @@ jinja2>=3.1.0
 
 # Headless browser automation for taking HTML-to-image screenshots
 playwright>=1.40.0
-
-
-# === Hebrew Calendar (Optional) ===
-
-# Hebrew calendar date conversion
-# Uncomment when implementing Hebrew date display
-# hebrew-calendar>=1.0.0
 
 
 # === Testing (Development Only) ===

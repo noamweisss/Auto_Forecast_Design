@@ -1,7 +1,9 @@
 """Validated application configuration loaded at the application boundary."""
 
 from dataclasses import dataclass
+from datetime import date
 import json
+import math
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, TypeGuard
@@ -44,14 +46,8 @@ def load_settings(paths: AppPaths) -> AppSettings:
         "israel_forecast_codes",
         "00_ims_weather_codes.json",
     )
-    city_positions = _required_mapping(
-        design_tokens,
-        "city_positions",
-        "design_tokens.json",
-    )
-
     cities = _validate_cities(city_entries)
-    _validate_design_positions(cities, city_positions)
+    _validate_design_tokens(design_tokens, cities)
     weather_codes = _validate_weather_codes(weather_entries)
 
     return AppSettings(
@@ -127,7 +123,7 @@ def _validate_design_positions(
     positions: Mapping[str, Any],
 ) -> None:
     configured_keys = {city.internal_key for city in cities.values()}
-    position_keys = {key for key in positions if not key.startswith("_")}
+    position_keys = set(positions)
     if configured_keys != position_keys:
         missing = sorted(configured_keys - position_keys)
         unexpected = sorted(position_keys - configured_keys)
@@ -136,10 +132,82 @@ def _validate_design_positions(
             f"missing positions={missing}, unexpected positions={unexpected}"
         )
 
+    for city_key, raw_position in positions.items():
+        if not isinstance(raw_position, dict):
+            raise ConfigurationError(
+                f"Design position {city_key!r} must be a JSON object"
+            )
+        if set(raw_position) != {"x", "y", "layout"}:
+            raise ConfigurationError(
+                f"Design position {city_key!r} must contain exactly x, y, and layout"
+            )
+        for coordinate in ("x", "y"):
+            value = raw_position[coordinate]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ConfigurationError(
+                    f"Design position {city_key!r} requires finite numeric {coordinate}"
+                )
+        if raw_position["layout"] not in {"RTL", "LTR", "TTB"}:
+            raise ConfigurationError(
+                f"Design position {city_key!r} layout must be RTL, LTR, or TTB"
+            )
+
+
+def _validate_design_tokens(
+    document: Mapping[str, Any],
+    cities: Mapping[str, CitySettings],
+) -> None:
+    expected_sections = {"_meta", "canvas", "city_positions"}
+    if set(document) != expected_sections:
+        raise ConfigurationError(
+            "design_tokens.json must contain exactly _meta, canvas, and city_positions"
+        )
+
+    metadata = _required_mapping(document, "_meta", "design_tokens.json")
+    expected_metadata = {
+        "figma_url",
+        "figma_file_key",
+        "figma_node_id",
+        "last_verified",
+    }
+    if set(metadata) != expected_metadata or not all(
+        _nonempty_string(metadata.get(key)) for key in expected_metadata
+    ):
+        raise ConfigurationError(
+            "design_tokens.json _meta must contain nonempty Figma URL/key/node and last_verified"
+        )
+    try:
+        date.fromisoformat(str(metadata["last_verified"]))
+    except ValueError as error:
+        raise ConfigurationError(
+            "design_tokens.json last_verified must be an ISO date"
+        ) from error
+
+    canvas = _required_mapping(document, "canvas", "design_tokens.json")
+    if set(canvas) != {"width", "height"}:
+        raise ConfigurationError(
+            "design_tokens.json canvas must contain exactly width and height"
+        )
+    if type(canvas["width"]) is not int or type(canvas["height"]) is not int:
+        raise ConfigurationError("design_tokens.json canvas must be exactly 1080x1920")
+    if canvas["width"] != 1080 or canvas["height"] != 1920:
+        raise ConfigurationError("design_tokens.json canvas must be exactly 1080x1920")
+
+    positions = _required_mapping(document, "city_positions", "design_tokens.json")
+    _validate_design_positions(cities, positions)
+
 
 def _validate_weather_codes(
     entries: Mapping[str, Any],
 ) -> dict[str, Mapping[str, Any]]:
+    if len(entries) != 23:
+        raise ConfigurationError(
+            f"Israel weather catalog must define exactly 23 codes; found {len(entries)}"
+        )
     weather_codes: dict[str, Mapping[str, Any]] = {}
     for code, raw_entry in entries.items():
         if not isinstance(raw_entry, dict):
@@ -154,12 +222,33 @@ def _validate_weather_codes(
             raise ConfigurationError(
                 f"Weather code {code!r} must have nonempty Hebrew and English descriptions"
             )
+        if not _nonempty_string(raw_entry.get("category")):
+            raise ConfigurationError(
+                f"Weather code {code!r} must have a nonempty category"
+            )
+        icon = raw_entry.get("icon")
+        if not _safe_plain_filename(icon):
+            raise ConfigurationError(
+                f"Weather code {code!r} must have a safe plain icon filename"
+            )
         weather_codes[code] = _freeze(raw_entry)
     return weather_codes
 
 
 def _nonempty_string(value: Any) -> TypeGuard[str]:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _safe_plain_filename(value: Any) -> TypeGuard[str]:
+    return (
+        _nonempty_string(value)
+        and value == value.strip()
+        and value not in {".", ".."}
+        and "/" not in value
+        and "\\" not in value
+        and Path(value).name == value
+        and not Path(value).is_absolute()
+    )
 
 
 def _freeze(value: Any) -> Any:

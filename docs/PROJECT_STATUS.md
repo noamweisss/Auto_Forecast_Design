@@ -22,8 +22,8 @@ from real IMS data. Email and scheduled automation come later.
 | XML parsing | Implemented | Ordered snapshots are resolved for one exact date. Each city may independently fall back, but incomplete or invalid data fails the whole forecast. |
 | Validated snapshots | Implemented | IMS XML can be sealed with its real issue time, fetch time, feed, and complete forecast-date set. This proves source structure, not publishability. |
 | Snapshot store | Implemented | Valid snapshots are atomically stored as UTF-8 JSON and selected by metadata within an explicit seven-day window. |
-| Design assets | Available | Figma-derived tokens, fonts, icons, logos, and map assets are committed. |
-| Design helpers | Partial | `src/design/tokens.py` and icon descriptions still contain stubs. |
+| Design assets | Validated | The complete SVG map/logos, 23 catalog-selected icons, and Black/SemiBold fonts are checked before rendering. |
+| Story render context | Implemented | One frozen packing list supplies exact header text, 15 physical city positions, temperatures, icon/file URIs, and fallback state. |
 | HTML/CSS template | Placeholder | The 1080x1920 canvas exists, but it contains placeholder text rather than the design. |
 | Playwright renderer | Placeholder | `TemplateRenderer.render()` raises `NotImplementedError`. |
 | Image saving | Implemented | Pillow images can be saved as JPEG and PNG. |
@@ -33,23 +33,22 @@ from real IMS data. Email and scheduled automation come later.
 
 ## Verification snapshot
 
-On 2026-07-20, the offline suite passed 140 tests with no expected failures.
+On 2026-07-20, the offline suite passed 174 tests with no expected failures.
 The normal passing regressions for F-02 and F-03 prove exact-date fallback and
 complete 15-city output. The run used the isolated audit environment and a
 writable pytest temporary directory. Rendering output was not inspected because
-this slice does not implement or change rendering.
+this slice validates inputs but does not implement HTML/CSS or screenshots.
 
 ## Recommended next milestone
 
 Produce one real local image before building email or scheduling:
 
-1. Implement and test the design-token accessors.
-2. Complete weather-code-to-icon descriptions and paths.
-3. Turn `forecast_story.html` and `.css` into the real RTL design using the
+1. Add the frozen Figma reference package defined for Slice 3B.
+2. Turn `forecast_story.html` and `.css` into the real RTL design using the
    committed tokens and assets.
-4. Implement `TemplateRenderer.render()` with Jinja2 and Playwright.
-5. Connect the existing data pipeline to the renderer for one date.
-6. Inspect the resulting 1080x1920 image at normal size.
+3. Implement `TemplateRenderer.render()` with Jinja2 and Playwright.
+4. Connect the existing data pipeline to the renderer for one date.
+5. Inspect the resulting 1080x1920 image at normal size.
 
 This is intentionally one product milestone rather than a request to finish the
 entire delivery system.
@@ -77,6 +76,10 @@ archive lookup, strict parsing, and required provenance. F-02 and F-03 are
 repaired. An older *download* may safely help when its multi-day XML still
 contains the exact future day requested. Values for yesterday are never renamed
 as today's forecast.
+The design boundary now also produces one validated Story render context. It
+uses the verified 1080x1920 canvas, keeps all city x/y coordinates physical
+from the top-left (never RTL-mirrored), formats the exact Hebrew-calendar
+header, and refuses missing or unhydrated local assets before a browser opens.
 Rendering is still unimplemented. See [Architecture](ARCHITECTURE.md) for the
 current boundary.
 

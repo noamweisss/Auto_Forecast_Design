@@ -28,8 +28,9 @@ may be stale.
   implemented and covered by tests.
 - `src/main.py` is still a placeholder; it does not run the advertised pipeline.
 - The HTML/CSS template and `TemplateRenderer.render()` are placeholders.
-- Design-token helpers, part of the icon mapper, Hebrew-calendar display, and
-  email delivery still contain stubs.
+- The validated Story render context, weather catalog, physical city positions,
+  Hebrew-calendar header, and required local assets are ready for a future template.
+- Email delivery still contains stubs.
 - No production GitHub Actions workflow exists yet.
 - Figma-derived tokens and local design assets are committed, so ordinary work
   must not require live Figma access.
@@ -76,7 +77,7 @@ unfinished behavior, not a successful forecast-generation run.
 
 ```text
 src/data/       Fetch, parse, model, and archive IMS XML
-src/design/     Design-token and weather-icon access
+src/design/     Validated, template-ready Story context and asset addresses
 src/rendering/  Jinja2 template plus Playwright screenshot pipeline
 src/delivery/   Image saving and future email delivery
 src/utils/      Logging and date helpers

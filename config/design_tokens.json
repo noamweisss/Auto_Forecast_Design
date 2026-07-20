@@ -1,185 +1,29 @@
 {
-    "_meta": {
-        "description": "Design tokens extracted from Figma for the IMS Weather Forecast Generator",
-        "figma_url": "https://www.figma.com/design/YVPUc24KCJIFrHpoXKrHz7/Story-Layout-V2.0?node-id=1-2",
-        "last_updated": "2025-12-22",
-        "status": "VALIDATED - Extracted from Figma using Figma MCP",
-        "extraction_method": "Figma MCP Desktop (http://127.0.0.1:3845/mcp)"
-    },
-    "canvas": {
-        "width": 1080,
-        "height": 1920,
-        "background": {
-            "type": "gradient",
-            "gradient_type": "linear",
-            "angle": -23.2359,
-            "stops": [
-                {"color": "#DCFF57", "position": 62.599},
-                {"color": "#22B2FF", "position": 112.14}
-            ]
-        }
-    },
-    "colors": {
-        "text_primary": "#FFFFFF",
-        "text_secondary": "#000000",
-        "gradient_start": "#DCFF57",
-        "gradient_end": "#22B2FF",
-        "header_separator": "#FFFFFF"
-    },
-    "typography": {
-        "header_date": {
-            "font_family": "NotoSansHebrew-Black",
-            "font_size": 36,
-            "font_weight": 900,
-            "line_height": 28,
-            "color": "#FFFFFF"
-        },
-        "city_name": {
-            "font_family": "NotoSansHebrew-Black",
-            "font_size": 24,
-            "font_weight": 900,
-            "line_height": 24,
-            "color": "#000000"
-        },
-        "temperature": {
-            "font_family": "NotoSansHebrew-SemiBold",
-            "font_size": 20,
-            "font_weight": 600,
-            "line_height": 20,
-            "color": "#000000"
-        },
-        "description": {
-            "font_family": "NotoSansHebrew-SemiBold",
-            "font_size": 24,
-            "font_weight": 600,
-            "line_height": 36,
-            "color": "#000000"
-        },
-        "ims_logo_text": {
-            "font_family": "NotoSansHebrew-ExtraCondensed",
-            "font_size": 18,
-            "font_weight": 400,
-            "line_height": 18,
-            "color": "#000000"
-        }
-    },
-    "spacing": {
-        "header": {
-            "padding_top": 57,
-            "padding_bottom": 18,
-            "padding_horizontal": 100,
-            "gap": 40,
-            "separator_height": 7
-        },
-        "forecast_data_container": {
-            "left": 128,
-            "top": 248,
-            "width": 847,
-            "height": 1582
-        },
-        "city_component": {
-            "gap": 16,
-            "padding": 10,
-            "border_radius": 18
-        },
-        "israel_map": {
-            "left": 258,
-            "top": 288.3,
-            "width": 533.371,
-            "height": 1495.196
-        },
-        "logos": {
-            "left": 633,
-            "top": 1709,
-            "gap": 24
-        }
-    },
-    "city_positions": {
-        "_comment": "Coordinates extracted from Figma. Positions are (x, y) from top-left of canvas. Layout types: RTL (right-to-left), TTB (top-to-bottom), LTR (left-to-right)",
-        "zefat": {
-            "x": 463,
-            "y": 267,
-            "layout": "RTL"
-        },
-        "nazareth": {
-            "x": 552,
-            "y": 428,
-            "layout": "RTL"
-        },
-        "qazrin": {
-            "x": 809,
-            "y": 418,
-            "layout": "TTB"
-        },
-        "tiberias": {
-            "x": 716,
-            "y": 579,
-            "layout": "RTL"
-        },
-        "haifa": {
-            "x": 287,
-            "y": 472,
-            "layout": "RTL"
-        },
-        "afula": {
-            "x": 552,
-            "y": 537,
-            "layout": "TTB"
-        },
-        "tel_aviv": {
-            "x": 227,
-            "y": 669,
-            "layout": "RTL"
-        },
-        "lod": {
-            "x": 465,
-            "y": 705,
-            "layout": "TTB"
-        },
-        "bet_shean": {
-            "x": 702,
-            "y": 738,
-            "layout": "TTB"
-        },
-        "ashdod": {
-            "x": 203,
-            "y": 815,
-            "layout": "RTL"
-        },
-        "jerusalem": {
-            "x": 456,
-            "y": 871,
-            "layout": "RTL"
-        },
-        "ein_gedi": {
-            "x": 699,
-            "y": 950,
-            "layout": "LTR"
-        },
-        "beer_sheva": {
-            "x": 428,
-            "y": 986,
-            "layout": "TTB"
-        },
-        "mizpe_ramon": {
-            "x": 393,
-            "y": 1229,
-            "layout": "TTB"
-        },
-        "eilat": {
-            "x": 443,
-            "y": 1508,
-            "layout": "TTB"
-        }
-    },
-    "icon_sizes": {
-        "weather_icon": 50
-    },
-    "description_text": {
-        "_comment": "Position and dimensions of the weather description text block",
-        "left": 851,
-        "top": 986,
-        "width": 239,
-        "transform": "translate-x-[-100%]"
-    }
+  "_meta": {
+    "figma_url": "https://www.figma.com/design/YVPUc24KCJIFrHpoXKrHz7/Story-Layout-V2.0?node-id=1-2",
+    "figma_file_key": "YVPUc24KCJIFrHpoXKrHz7",
+    "figma_node_id": "1:2",
+    "last_verified": "2026-07-20"
+  },
+  "canvas": {
+    "width": 1080,
+    "height": 1920
+  },
+  "city_positions": {
+    "zefat": {"x": 463, "y": 267, "layout": "RTL"},
+    "nazareth": {"x": 552, "y": 428, "layout": "RTL"},
+    "qazrin": {"x": 809, "y": 418, "layout": "TTB"},
+    "tiberias": {"x": 716, "y": 579, "layout": "RTL"},
+    "haifa": {"x": 287, "y": 472, "layout": "RTL"},
+    "afula": {"x": 552, "y": 537, "layout": "TTB"},
+    "tel_aviv": {"x": 227, "y": 669, "layout": "RTL"},
+    "lod": {"x": 465, "y": 705, "layout": "TTB"},
+    "bet_shean": {"x": 702, "y": 738, "layout": "TTB"},
+    "ashdod": {"x": 203, "y": 815, "layout": "RTL"},
+    "jerusalem": {"x": 456, "y": 871, "layout": "RTL"},
+    "ein_gedi": {"x": 699, "y": 950, "layout": "LTR"},
+    "beer_sheva": {"x": 428, "y": 986, "layout": "TTB"},
+    "mizpe_ramon": {"x": 393, "y": 1229, "layout": "TTB"},
+    "eilat": {"x": 443, "y": 1508, "layout": "TTB"}
+  }
 }

@@ -34,9 +34,38 @@ clock: callers pass the forecast date explicitly.
 
 `src/settings.py` reads the three committed configuration files once at the
 application boundary. It validates the 15-city identity and display fields,
-the Israel weather-code descriptions, and exact agreement between configured
-city keys and design positions. City and daily parsing receive that immutable
-value as an ordinary keyword argument. There is no global settings singleton.
+the 23-code Israel weather catalog (including safe icon filenames), the fixed
+1080x1920 canvas, and exact agreement between configured city keys and physical
+design positions. City and daily parsing receive that immutable value as an
+ordinary keyword argument. There is no global settings singleton.
+
+## Story design boundary
+
+`config/design_tokens.json` intentionally contains only Figma source metadata,
+the fixed canvas size, and the 15 city positions. Each x/y value is a physical
+coordinate measured from the top-left of the Story. An `RTL` label changes text
+flow later; it never mirrors that coordinate. Gradient, typography, spacing,
+and logo geometry belong directly in the future CSS, not in a Python token
+service.
+
+`config/00_ims_weather_codes.json` is the one catalog for supported Israel
+codes, descriptions, categories, and icon filenames. A few conditions reuse
+the least misleading existing illustration: snow for sleet, cloud for fog and
+muggy conditions, warning for dust/sand, and frost for cold/extreme cold. These
+are deliberate fallbacks, not claims that custom illustrations exist.
+
+`src/design/render_context.py` is like a packing list checked before travel. It
+turns one complete `DailyForecast` plus explicit settings and paths into frozen
+template-ready text, numbers, tuples, and absolute `file:` URIs. It validates
+the 15 identities, physical positions, catalog descriptions/icons, SVG map and
+composite logos, and the Black/SemiBold fonts. The IMS SVG already contains its
+Hebrew label; no ExtraCondensed font or replacement label is invented. Missing
+files and Git LFS pointer text fail here, before a browser opens.
+
+The header retains separate bidi-safe fields: numeric Gregorian text such as
+`17/11/2025` and a Pyluach-derived Hebrew-calendar field such as
+`כ״ו בחשוון התשפ״ו`. Slice 4 can isolate those runs while displaying the single
+verified Figma line.
 
 ## Snapshots and provenance
 
@@ -84,8 +113,8 @@ current working directory.
 
 ## Current boundary
 
-The data layer now fetches, seals, stores, and parses exact-date snapshots into
-one complete provenance-backed forecast. F-02 and F-03 are normal passing
-regressions: fallback never selects another XML date, and invalid optional data
-cannot produce a 14-city result. The renderer and end-to-end workflow remain
-placeholders; `src/main.py` still does not run this data path.
+The data layer fetches, seals, stores, and parses exact-date snapshots into one
+complete provenance-backed forecast. The design layer now validates and packs
+that forecast for a future Story template. The HTML/CSS renderer, frozen visual
+reference package, and end-to-end workflow remain unfinished; `src/main.py`
+still does not run this data path.

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a frozen, validated Story render context with exact header fields, 15 ordered city labels, physical positions, local asset URIs, and derived fallback state.
+- Added Pyluach-based Hebrew-calendar formatting for the approved `כ״ו בחשוון התשפ״ו` header text.
 - Added structured IMS fetch results with explicit retryable failure kinds, exact attempt counts, and offline-injected request/sleep boundaries.
 - Added validated snapshot construction from IMS issue time, forecast dates, feed identity, fetch time, and a deterministic content-based ID.
 - Added an atomic UTF-8 JSON snapshot store with metadata-based seven-day lookup and cleanup.
@@ -28,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Consolidated all 23 supported Israel weather descriptions and icon filenames into one validated catalog, including documented deliberate icon reuse.
+- Reduced structured design JSON to Figma metadata, the fixed 1080x1920 canvas, and 15 top-left physical city positions.
+- Removed the duplicate icon mapping and unimplemented design-token accessor modules; future visual styling belongs in HTML/CSS.
 - Replaced date-named XML archive behavior with sealed snapshot records; legacy `.xml` archives are deliberately ignored rather than assigned invented metadata.
 - Archive lookup now requires the requested forecast date inside validated snapshot metadata and returns newest matching records as archive sources.
 - Replaced loose-XML parser inputs with preferred-first validated snapshot sequences and exact-date selection.

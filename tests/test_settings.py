@@ -3,6 +3,7 @@
 import json
 from dataclasses import FrozenInstanceError
 from datetime import date, datetime, timezone
+import math
 from pathlib import Path
 
 import pytest
@@ -47,7 +48,21 @@ def test_load_settings_reads_all_committed_configuration_once():
     assert len(settings.cities) == 15
     assert settings.cities["510"].internal_key == "jerusalem"
     assert settings.weather_codes["1250"]["english"] == "Clear"
+    assert settings.weather_codes["1250"]["icon"] == "clear.png"
     assert settings.design_tokens["canvas"]["width"] == 1080
+
+
+def test_design_tokens_keep_only_python_required_sections_and_values():
+    settings = load_settings(PATHS)
+
+    assert set(settings.design_tokens) == {"_meta", "canvas", "city_positions"}
+    assert dict(settings.design_tokens["canvas"]) == {"width": 1080, "height": 1920}
+    assert len(settings.design_tokens["city_positions"]) == 15
+    assert settings.design_tokens["city_positions"]["jerusalem"] == {
+        "x": 456,
+        "y": 871,
+        "layout": "RTL",
+    }
 
 
 def test_settings_values_are_immutable():
@@ -155,6 +170,45 @@ def test_city_internal_keys_must_exactly_match_design_positions(tmp_path):
 @pytest.mark.parametrize(
     ("change", "message"),
     [
+        (lambda tokens: tokens["canvas"].update(width=1079), "1080x1920"),
+        (lambda tokens: tokens["canvas"].update(height="1920"), "1080x1920"),
+        (lambda tokens: tokens["canvas"].update(extra=1), "width and height"),
+        (lambda tokens: tokens.update(extra={}), "exactly.*_meta.*canvas.*city_positions"),
+    ],
+)
+def test_design_token_structure_and_canvas_are_strict(tmp_path, change, message):
+    paths = _copy_valid_config(tmp_path)
+    tokens = _read_json(paths, "design_tokens.json")
+    change(tokens)
+    _write_json(paths, "design_tokens.json", tokens)
+
+    with pytest.raises(ConfigurationError, match=message):
+        load_settings(paths)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("x", "456", "finite numeric x"),
+        ("x", True, "finite numeric x"),
+        ("x", math.inf, "finite numeric x"),
+        ("y", math.nan, "finite numeric y"),
+        ("layout", "AUTO", "RTL, LTR, or TTB"),
+    ],
+)
+def test_city_position_fields_are_validated(tmp_path, field, value, message):
+    paths = _copy_valid_config(tmp_path)
+    tokens = _read_json(paths, "design_tokens.json")
+    tokens["city_positions"]["jerusalem"][field] = value
+    _write_json(paths, "design_tokens.json", tokens)
+
+    with pytest.raises(ConfigurationError, match=message):
+        load_settings(paths)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
         (lambda entry: entry.update(code="different"), "mapping key.*stored code"),
         (lambda entry: entry.update(hebrew=""), "nonempty Hebrew and English descriptions"),
         (lambda entry: entry.update(english=""), "nonempty Hebrew and English descriptions"),
@@ -167,4 +221,18 @@ def test_weather_entry_validation_is_actionable(tmp_path, change, message):
     _write_json(paths, "00_ims_weather_codes.json", weather)
 
     with pytest.raises(ConfigurationError, match=message):
+        load_settings(paths)
+
+
+@pytest.mark.parametrize(
+    "icon",
+    ["", " clear.png ", "../clear.png", "nested/clear.png", "nested\\clear.png"],
+)
+def test_weather_icon_must_be_a_safe_plain_filename(tmp_path, icon):
+    paths = _copy_valid_config(tmp_path)
+    weather = _read_json(paths, "00_ims_weather_codes.json")
+    weather["israel_forecast_codes"]["1250"]["icon"] = icon
+    _write_json(paths, "00_ims_weather_codes.json", weather)
+
+    with pytest.raises(ConfigurationError, match="safe plain icon filename"):
         load_settings(paths)
