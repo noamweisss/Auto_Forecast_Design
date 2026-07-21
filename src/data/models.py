@@ -111,9 +111,11 @@ class DailyForecast:
         )
 
     def get_city_by_id(self, city_id: str) -> Optional[CityForecast]:
+        """Return the matching city, or None if no city has that ID."""
         return next((city for city in self.city_forecasts if city.city_id == city_id), None)
 
     def get_city_by_name(self, name_english: str) -> Optional[CityForecast]:
+        """Return the city whose English name matches (case-insensitive), or None."""
         return next(
             (
                 city

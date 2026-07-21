@@ -51,6 +51,8 @@ class FetchFailureKind(str, Enum):
 
 @dataclass(frozen=True)
 class FetchFailure:
+    """A readable reason one fetch attempt failed, kept for the caller."""
+
     kind: FetchFailureKind
     message: str
     status_code: Optional[int] = None
@@ -64,6 +66,8 @@ class FetchFailure:
 
 @dataclass(frozen=True)
 class FetchResult:
+    """Exactly one of decoded ``xml`` or a structured ``failure`` for one feed."""
+
     feed_type: FeedType
     url: str
     attempt_count: int

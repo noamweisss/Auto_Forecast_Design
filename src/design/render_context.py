@@ -24,6 +24,8 @@ class CityLabelLayout(str, Enum):
 
 @dataclass(frozen=True)
 class StoryCity:
+    """One city's template-ready label, temperature, icon, and position."""
+
     city_id: str
     internal_key: str
     name_hebrew: str
@@ -38,6 +40,8 @@ class StoryCity:
 
 @dataclass(frozen=True)
 class StoryAssets:
+    """Absolute ``file:`` URIs for the map, logos, and fonts the template needs."""
+
     map_uri: str
     mot_logo_uri: str
     ims_logo_uri: str
@@ -47,6 +51,8 @@ class StoryAssets:
 
 @dataclass(frozen=True)
 class StoryRenderContext:
+    """The complete, validated packing list handed to the Story renderer."""
+
     canvas_width: int
     canvas_height: int
     target_date_iso: str

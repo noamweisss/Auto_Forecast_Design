@@ -58,6 +58,8 @@ _CITIES_SHAPE_ELEMENTS = {
 
 @dataclass(frozen=True)
 class ForecastSnapshot:
+    """A sealed, time-stamped copy of one IMS feed and the dates it advertises."""
+
     snapshot_id: str
     feed_type: FeedType
     source: SnapshotSource
@@ -85,6 +87,8 @@ class ForecastSnapshot:
 
 @dataclass(frozen=True)
 class ForecastProvenance:
+    """Which snapshot a parsed value came from, and why if it was a fallback."""
+
     snapshot_id: str
     feed_type: FeedType
     source: SnapshotSource

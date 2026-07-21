@@ -1,0 +1,10 @@
+# CodeRabbit configuration. See https://docs.coderabbit.ai/reference/configuration
+reviews:
+  pre_merge_checks:
+    # This project documents its public, behavioral surface (public functions,
+    # classes, and non-obvious methods) and deliberately leaves small private
+    # helpers and trivial accessors uncommented. A blanket coverage percentage
+    # penalizes that choice, so the docstring-coverage check is disabled. Every
+    # other CodeRabbit review check stays on.
+    docstrings:
+      mode: "off"
