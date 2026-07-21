@@ -36,6 +36,7 @@ _experiments/
 # Local/legacy agent state. Shared instructions belong in AGENTS.md.
 .claude/
 .gemini/
+.superpowers/
 CLAUDE.md
 GEMINI.md
 

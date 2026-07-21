@@ -1,25 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="forecast_story.css">
-    <title>IMS Daily Forecast</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>תחזית יומית</title>
+  <style>
+    @font-face {
+      font-family: "IMS Story Black";
+      src: url("{{ context.assets.black_font_uri }}") format("truetype");
+      font-style: normal;
+      font-weight: 900;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "IMS Story SemiBold";
+      src: url("{{ context.assets.semibold_font_uri }}") format("truetype");
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+    }
+    {% include "forecast_story.css" %}
+  </style>
 </head>
 <body>
-    <!-- 
-      This is the HTML template for the 1080x1920 Instagram Story layout.
-      It will be filled with data by template_renderer.py using Jinja2 syntax.
-      
-      Example:
-      <div class="header">
-          <h1>{{ forecast_date_hebrew }}</h1>
+  <main id="story-canvas" aria-label="תחזית מזג האוויר היומית">
+    <header id="story-header">
+      <div id="header-line">
+        <span id="header-hebrew" dir="rtl">{{ context.header_hebrew_calendar }}</span>
+        <span id="header-gregorian" dir="ltr">{{ context.header_gregorian_numeric }}</span>
       </div>
-    -->
-    
-    <div class="canvas">
-        <h1>Placeholder: HTML Template</h1>
-        <p>Design will go here.</p>
+      <div id="header-separator" aria-hidden="true"></div>
+    </header>
+
+    <div id="story-map" aria-hidden="true">
+      <img id="israel-map" src="{{ context.assets.map_uri }}" alt="">
     </div>
+
+    <section id="forecast-layer" aria-label="פרטי התחזית">
+      <p id="country-description" dir="rtl">{{ context.country_description_hebrew }}</p>
+    </section>
+
+    <section id="city-layer" aria-label="תחזיות לפי עיר">
+      {% for city in context.cities %}
+      <article
+        class="city-marker layout-{{ city.layout.value|lower }}"
+        data-city-key="{{ city.internal_key }}"
+        style="left: {{ city.x|css_number }}px; top: {{ city.y|css_number }}px"
+      >
+        <img class="city-icon" src="{{ city.icon_uri }}" alt="">
+        <div class="city-copy" dir="rtl">
+          <div class="city-name">{{ city.name_hebrew }}</div>
+          <bdi class="temperature" dir="ltr">{{ city.temperature_text }}</bdi>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <div id="logo-group" aria-label="סמלי השירות">
+      <img id="mot-logo" src="{{ context.assets.mot_logo_uri }}" alt="">
+      <img id="ims-logo" src="{{ context.assets.ims_logo_uri }}" alt="">
+    </div>
+  </main>
 </body>
 </html>

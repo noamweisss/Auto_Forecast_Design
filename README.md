@@ -3,8 +3,9 @@
 An in-progress system for generating daily, branded weather-forecast images for
 the Israel Meteorological Service (IMS) media team.
 
-> **Current status:** the IMS data pipeline is implemented. The HTML/CSS +
-> Playwright image renderer and the end-to-end command are not implemented yet.
+> **Current status:** one thin application and CLI connect exact-date IMS-shaped
+> source data to the checked HTML/CSS + Playwright renderer and one atomic local
+> PNG. Fixture mode is fully offline sample data; live mode uses real IMS data.
 
 ## What this project is for
 
@@ -15,7 +16,7 @@ maintainable workflow:
 2. Parse Hebrew forecast data into Python objects.
 3. Inject that data into an RTL HTML/CSS design.
 4. Capture a 1080x1920 image with Playwright.
-5. Save JPEG and PNG versions.
+5. Atomically save one canonical PNG.
 6. Eventually deliver the result automatically.
 
 The project is design-first. Its maintainer works primarily in Figma, HTML, and
@@ -27,19 +28,26 @@ and debuggability matter more than clever abstractions.
 - IMS XML fetching with retries and Hebrew encoding fallbacks.
 - Parsing country and city forecasts into Python data models.
 - Weather-code and city configuration loading inside the parser.
-- Local XML archive and fallback helpers.
-- JPEG/PNG saving and old-output cleanup.
+- Validated snapshot archiving and exact-date fallback selection.
+- Validation and atomic saving of one canonical 1080x1920 PNG.
 - Automated tests for the implemented data and file-saving layers.
 - Committed Figma-derived design tokens, fonts, logos, map, and weather icons.
+- A validated Story render context plus the complete 1080x1920 RTL HTML/CSS design.
+- A deterministic Playwright renderer that rejects missing assets, fonts, browser
+  errors, wrong layout geometry, and invalid PNG output.
+- A frozen reference fixture and ignored visual-comparison helper for normal-size
+  design review.
+- A real `python -m src.main` command with deterministic fixture and live IMS
+  source modes, exact-date fallback provenance, stable exits, and one local PNG.
+- A browser-marked vertical test from committed IMS XML fixtures through the
+  complete application and atomic saver.
 
 ## What is unfinished
 
-- `python -m src.main` only prints a placeholder explanation.
-- `TemplateRenderer.render()` does not render HTML or take a screenshot.
-- The forecast HTML/CSS contains placeholder content.
-- Several design-token and icon-description helpers are stubs.
 - Email delivery is not implemented.
 - No daily GitHub Actions workflow exists.
+- The first live output is workable, but future visual refinements remain a
+  design choice rather than a blocker for the local generator.
 
 See [Project Status](docs/PROJECT_STATUS.md) for the verified layer-by-layer map
 and the recommended restart point.
@@ -50,7 +58,7 @@ and the recommended restart point.
 - `requests` and `lxml` for IMS data
 - Jinja2 for HTML templating
 - Playwright for browser screenshots
-- Pillow for image output
+- Pillow for final PNG validation
 - pytest for automated tests
 
 Hebrew layout is handled by the browser with `dir="rtl"`; the XML pipeline uses
@@ -89,13 +97,38 @@ Run the tests:
 python -m pytest tests -q -p no:cacheprovider
 ```
 
-The current entry point can be inspected with:
+Generate a deterministic offline demo from the two committed sanitized
+production-shaped XML samples:
 
 ```bash
-python -m src.main
+python -m src.main --source fixture
 ```
 
-It does **not** generate a forecast image yet.
+That fixture is local sample data, not today's forecast. Generate from real IMS
+data for the Israel run-start date with:
+
+```bash
+python -m src.main --source live
+```
+
+Request an explicit exact date or repository-root-relative output directory with:
+
+```bash
+python -m src.main --source live --date 2026-07-20
+python -m src.main --source fixture --output-dir test-results/forecast-demo
+```
+
+The command never selects a nearby date. A successful run writes one absolute
+`forecast_YYYY-MM-DD.png` path; email and scheduling are not part of this command.
+
+Renderer work can create the ignored frozen-reference diagnostics with:
+
+```bash
+python -m tests.story_visual
+```
+
+Open the resulting files under `test-results/story-visual/` at normal size;
+their metrics support human review and are not a pass/fail similarity score.
 
 ## Codex cloud setup
 
@@ -123,6 +156,7 @@ browser while setup-time internet access is available.
 
 - [AGENTS.md](AGENTS.md) is the durable guide for local and cloud coding agents.
 - [Project Status](docs/PROJECT_STATUS.md) is the current implementation map.
+- [Architecture](docs/ARCHITECTURE.md) explains the current small-layer structure and shared paths.
 - [Initial Plan](docs/00_initial_plan.md) is historical architecture context.
 - [Phase 2 Plan](docs/01_phase2_data_pipeline_plan.md) documents the data work.
 - [Folder Structure](docs/99_folder_structure.md) is a historical navigation aid.

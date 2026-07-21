@@ -25,19 +25,10 @@ Usage:
 """
 
 import os
-import smtplib
 from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
 from pathlib import Path
 from datetime import date
 from typing import Optional
-
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 
 def send_forecast_email(
     image_path: str,

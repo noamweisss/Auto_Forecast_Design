@@ -9,139 +9,162 @@
       "code": "1010",
       "hebrew": "סופות חול",
       "english": "Sandstorms",
-      "category": "severe"
+      "category": "severe",
+      "icon": "warning.png"
     },
     "1020": {
       "code": "1020",
       "hebrew": "סופת רעמים וברקים",
       "english": "Thunderstorms",
-      "category": "severe"
+      "category": "severe",
+      "icon": "thunderstorm.png"
     },
     "1060": {
       "code": "1060",
       "hebrew": "שלג",
       "english": "Snow",
-      "category": "precipitation"
+      "category": "precipitation",
+      "icon": "snow.png"
     },
     "1070": {
       "code": "1070",
       "hebrew": "שלג קל",
       "english": "Light snow",
-      "category": "precipitation"
+      "category": "precipitation",
+      "icon": "snow.png"
     },
     "1080": {
       "code": "1080",
       "hebrew": "גשם מעורב בשלג",
       "english": "Sleet",
-      "category": "precipitation"
+      "category": "precipitation",
+      "icon": "snow.png"
     },
     "1140": {
       "code": "1140",
       "hebrew": "גשם",
       "english": "Rainy",
-      "category": "precipitation"
+      "category": "precipitation",
+      "icon": "rainy.png"
     },
     "1160": {
       "code": "1160",
       "hebrew": "ערפל",
       "english": "Fog",
-      "category": "visibility"
+      "category": "visibility",
+      "icon": "cloudy.png"
     },
     "1220": {
       "code": "1220",
       "hebrew": "מעונן חלקית",
       "english": "Partly cloudy",
-      "category": "clouds"
+      "category": "clouds",
+      "icon": "partly_cloudy.png"
     },
     "1230": {
       "code": "1230",
       "hebrew": "מעונן",
       "english": "Cloudy",
-      "category": "clouds"
+      "category": "clouds",
+      "icon": "cloudy.png"
     },
     "1250": {
       "code": "1250",
       "hebrew": "בהיר",
       "english": "Clear",
-      "category": "clear"
+      "category": "clear",
+      "icon": "clear.png"
     },
     "1260": {
       "code": "1260",
       "hebrew": "רוחות ערות",
       "english": "Windy",
-      "category": "wind"
+      "category": "wind",
+      "icon": "windy.png"
     },
     "1270": {
       "code": "1270",
       "hebrew": "הביל",
       "english": "Muggy",
-      "category": "conditions"
+      "category": "conditions",
+      "icon": "cloudy.png"
     },
     "1300": {
       "code": "1300",
       "hebrew": "קרה",
       "english": "Frost",
-      "category": "temperature"
+      "category": "temperature",
+      "icon": "frost.png"
     },
     "1310": {
       "code": "1310",
       "hebrew": "חם",
       "english": "Hot",
-      "category": "temperature"
+      "category": "temperature",
+      "icon": "hot.png"
     },
     "1320": {
       "code": "1320",
       "hebrew": "קר",
       "english": "Cold",
-      "category": "temperature"
+      "category": "temperature",
+      "icon": "frost.png"
     },
     "1510": {
       "code": "1510",
       "hebrew": "סוער",
       "english": "Stormy",
-      "category": "severe"
+      "category": "severe",
+      "icon": "thunderstorm.png"
     },
     "1520": {
       "code": "1520",
       "hebrew": "שלג כבד",
       "english": "Heavy snow",
-      "category": "precipitation"
+      "category": "precipitation",
+      "icon": "snow.png"
     },
     "1530": {
       "code": "1530",
       "hebrew": "מעונן חלקית, אפשרות לגשם",
       "english": "Partly cloudy, possible rain",
-      "category": "clouds"
+      "category": "clouds",
+      "icon": "partly_cloudy_rain.png"
     },
     "1540": {
       "code": "1540",
       "hebrew": "מעונן, אפשרות לגשם",
       "english": "Cloudy, possible rain",
-      "category": "clouds"
+      "category": "clouds",
+      "icon": "partly_cloudy_rain.png"
     },
     "1560": {
       "code": "1560",
       "hebrew": "מעונן, גשם קל",
       "english": "Cloudy, light rain",
-      "category": "precipitation"
+      "category": "precipitation",
+      "icon": "rainy.png"
     },
     "1570": {
       "code": "1570",
       "hebrew": "אביך",
       "english": "Dust",
-      "category": "visibility"
+      "category": "visibility",
+      "icon": "warning.png"
     },
     "1580": {
       "code": "1580",
       "hebrew": "חם מאד",
       "english": "Extremely hot",
-      "category": "temperature"
+      "category": "temperature",
+      "icon": "very_hot.png"
     },
     "1590": {
       "code": "1590",
       "hebrew": "קר מאד",
       "english": "Extremely cold",
-      "category": "temperature"
+      "category": "temperature",
+      "icon": "frost.png"
     }
   },
 

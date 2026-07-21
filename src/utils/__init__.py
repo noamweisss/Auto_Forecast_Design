@@ -3,7 +3,7 @@ Utilities Package - Shared Helper Functions
 
 This package contains utilities used across multiple modules:
 - Logging configuration
-- Date formatting (Hebrew and Georgian calendars)
+- Exact Hebrew-calendar date formatting
 
 Modules:
     logger.py     - Logging setup and configuration

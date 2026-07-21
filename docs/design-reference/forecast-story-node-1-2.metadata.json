@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "figma": {
+    "file_key": "YVPUc24KCJIFrHpoXKrHz7",
+    "node_id": "1:2",
+    "node_name": "Instagram Story 01",
+    "source_url": "https://www.figma.com/design/YVPUc24KCJIFrHpoXKrHz7/Story-Layout-V2.0?node-id=1-2"
+  },
+  "export": {
+    "path": "docs/design-reference/forecast-story-node-1-2.png",
+    "exported_on": "2026-07-20",
+    "reviewed_on": "2026-07-20",
+    "width": 1080,
+    "height": 1920,
+    "byte_size": 1227358,
+    "sha256": "2b9f19776daf5310dca821aa45b0fcb83308ffa2a33a1bd83709d45ae4a5762e"
+  },
+  "matching_fixture": "tests/fixtures/render/forecast_story_reference.json",
+  "assets": {
+    "map": {
+      "path": "assets/Map/Israel Map 01.svg",
+      "sha256": "36e07c802c00fb78497e594df1c62349658f15f3e768643a5f73ffdb3d633d23"
+    },
+    "mot_logo": {
+      "path": "assets/Logos/mot_logo.svg",
+      "sha256": "9ec6001cf2f88de68c1e531346bebf0c905f3a2240b7cd184f092f498fd3c950"
+    },
+    "ims_logo": {
+      "path": "assets/Logos/ims_logo.svg",
+      "sha256": "6259a696a0b187dd3cdc3298f6db3e9d0755911b06680956b4395b37f2f94755"
+    },
+    "black_font": {
+      "path": "assets/Fonts/NotoSansHebrew-Black.ttf",
+      "sha256": "c51aa4df24a11df15d04bd0b2be2593deb1e0e234a670d8886e61bbbc3ed8464"
+    },
+    "semibold_font": {
+      "path": "assets/Fonts/NotoSansHebrew-SemiBold.ttf",
+      "sha256": "9abe8cafd04882a1733438a853b6933268f56680dc45eee1497ebb95b5f38216"
+    },
+    "weather_icon": {
+      "path": "assets/Weather_Icons/partly_cloudy_rain.png",
+      "sha256": "d74287b95976cc8ef6bba4de4a0303222baefd9db190645694242bb1dfca31cd"
+    }
+  },
+  "visual_policy": {
+    "version": "story-node-1-2-v1",
+    "note": "This frozen PNG is the target appearance; HTML/CSS is the editable implementation source."
+  }
+}

@@ -17,12 +17,10 @@ Running Tests:
 Test Files:
     test_parser.py    - Tests for XML parsing
     test_date_utils.py - Tests for date formatting
-    test_rendering.py  - Tests for image generation
+    test_template_renderer.py - Tests for browser image generation
 
 Why Write Tests?
     1. Catch bugs early - before you notice them visually
     2. Safe refactoring - change code confidently
     3. Documentation - tests show how code is supposed to work
 """
-
-import pytest

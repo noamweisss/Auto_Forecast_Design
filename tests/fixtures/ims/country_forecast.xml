@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<IsraelWeatherForecastMorning>
+  <Originator>
+    <Organization>Israel Meteorological Service</Organization>
+    <Generator>Global Distribution of Meteorological Information</Generator>
+  </Originator>
+  <Identification>
+    <Title>Weather Forecast for Israel (Morning)</Title>
+    <IssueDateTime>2025-12-17 04:23</IssueDateTime>
+  </Identification>
+  <Location>
+    <LocationMetaData>
+      <LocationId>230</LocationId>
+      <LocationNameEng>Israel</LocationNameEng>
+      <LocationNameHeb>ישראל</LocationNameHeb>
+      <RemarksEng/>
+      <RemarksHeb/>
+      <Remarks>Forecast for all the country, generated in Mofet</Remarks>
+    </LocationMetaData>
+    <LocationData>
+      <TimeUnitData>
+        <Date>2025-12-17</Date>
+        <Element>
+          <ElementName>Warning in English</ElementName>
+          <ElementValue>Warnings and advisories are published on our RSS page, in Hebrew only.</ElementValue>
+        </Element>
+        <Element>
+          <ElementName>Warning in Hebrew</ElementName>
+          <ElementValue>אזהרות והתראות מופיעות בדף RSS.</ElementValue>
+        </Element>
+        <Element>
+          <ElementName>Weather in English</ElementName>
+          <ElementValue>Today: Partly cloudy to clear. In the morning isolated showers are expected in the south. A slight risk of flash floods in the southern and eastern wadis. In midday the rain will stop. Temperatures will drop, becoming unseasonably low.
+
+
+Tonight: Clear to partly cloudy chance of frost in frost-prone areas.</ElementValue>
+        </Element>
+        <Element>
+          <ElementName>Weather in Hebrew</ElementName>
+          <ElementValue>היום: מעונן חלקית עד בהיר. בבוקר ירדו גשמים מקומיים בדרום הארץ. עדיין קיים חשש קל משיטפונות בנחלי הדרום. הטמפרטורות ירדו וייעשה קר מהרגיל לעונה. משעות הצהריים הגשמים ייפסקו.
+
+
+הלילה: מעונן חלקית עד בהיר קיים חשש מקרה במקומות המועדים.</ElementValue>
+        </Element>
+      </TimeUnitData>
+      <TimeUnitData>
+        <Date>2025-12-18</Date>
+        <Element>
+          <ElementName>Weather in English</ElementName>
+          <ElementValue>Mostly clear. A rise in temperatures, becoming seasonal. At night still a chance of frost in frost-prone areas.</ElementValue>
+        </Element>
+        <Element>
+          <ElementName>Weather in Hebrew</ElementName>
+          <ElementValue>בהיר בד"כ. תחול עליה קלה בטמפרטורות והן יהיו רגילות לעונה. בלילה עדיין קיים חשש מקרה במקומות המועדים.</ElementValue>
+        </Element>
+      </TimeUnitData>
+      <TimeUnitData>
+        <Date>2025-12-19</Date>
+        <Element>
+          <ElementName>Weather in English</ElementName>
+          <ElementValue>Partly cloudy. No significant change in temperatures. A possibility of very light rain in northern and central regions.</ElementValue>
+        </Element>
+        <Element>
+          <ElementName>Weather in Hebrew</ElementName>
+          <ElementValue>מעונן חלקית, ללא שינוי ניכר בטמפרטורות. ייתכן טפטוף בצפון הארץ ובמרכזה.</ElementValue>
+        </Element>
+      </TimeUnitData>
+      <TimeUnitData>
+        <Date>2025-12-20</Date>
+        <Element>
+          <ElementName>Weather in English</ElementName>
+          <ElementValue>Partly cloudy with a slight rise in temperatures mainly in mountains and inland regions.</ElementValue>
+        </Element>
+        <Element>
+          <ElementName>Weather in Hebrew</ElementName>
+          <ElementValue>מעונן חלקית עד בהיר, הטמפרטורות יעלו במקצת בעיקר בהרים ובפנים הארץ.</ElementValue>
+        </Element>
+      </TimeUnitData>
+    </LocationData>
+  </Location>
+</IsraelWeatherForecastMorning>

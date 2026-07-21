@@ -1,248 +1,214 @@
-"""
-XML Archive - Backup and Fallback System
+"""Atomic storage and metadata-based lookup for validated IMS snapshots."""
 
-This module manages a 7-day rolling archive of XML files.
-If today's fetch fails, we can fall back to yesterday's data
-(or earlier if needed).
-
-Archive Structure:
-    archive/
-    ├── 2024-12-18_country.xml
-    ├── 2024-12-18_cities.xml
-    ├── 2024-12-17_country.xml
-    ├── 2024-12-17_cities.xml
-    └── ... (up to 7 days of history)
-
-Usage:
-    from src.data.archive import save_to_archive, get_fallback_xml
-    
-    # After successful fetch, save a backup
-    save_to_archive(xml_content, "cities", date.today())
-    
-    # If fetch fails, get archived data
-    fallback_xml, archive_date = get_fallback_xml("cities")
-"""
-
-from datetime import date, timedelta
+from dataclasses import replace
+from datetime import date, datetime, timedelta
+import json
+import logging
+import os
 from pathlib import Path
-from typing import Optional, Tuple
+import re
+import tempfile
+from typing import Any
 
-from src.utils.logger import get_logger
-
-# Initialize logger for this module
-logger = get_logger(__name__)
-
-# Configuration
-ARCHIVE_DIR = Path("archive")
-MAX_ARCHIVE_DAYS = 7
-
-
-def save_to_archive(xml_content: str, xml_type: str, fetch_date: date) -> Path:
-    """
-    Save XML content to the archive folder.
-    
-    Args:
-        xml_content: The raw XML string to save
-        xml_type: Either "country" or "cities"
-        fetch_date: The date of the fetch (usually today)
-    
-    Returns:
-        Path to the saved file
-        
-    Example:
-        path = save_to_archive(xml, "cities", date(2024, 12, 18))
-        # Saves to: archive/2024-12-18_cities.xml
-    """
-    # Ensure archive directory exists
-    ARCHIVE_DIR.mkdir(exist_ok=True)
-    
-    # Get the archive path
-    archive_path = get_archive_path(xml_type, fetch_date)
-    
-    # Write with UTF-8 encoding (critical for Hebrew text)
-    archive_path.write_text(xml_content, encoding='utf-8')
-    
-    logger.info(f"Archived {xml_type} XML to {archive_path}")
-    return archive_path
+from src.data.snapshots import (
+    FeedType,
+    ForecastSnapshot,
+    SnapshotSource,
+    SnapshotValidationError,
+    build_snapshot,
+)
 
 
-def get_fallback_xml(xml_type: str) -> Optional[Tuple[str, date]]:
-    """
-    Get the most recent archived XML as fallback.
-    
-    Tries yesterday first, then goes back day by day
-    up to MAX_ARCHIVE_DAYS.
-    
-    Args:
-        xml_type: Either "country" or "cities"
-    
-    Returns:
-        Tuple of (xml_content, archive_date), or None if no archive found
-        
-    Example:
-        result = get_fallback_xml("cities")
-        if result:
-            xml_content, archive_date = result
-            print(f"Using archive from {archive_date}")
-    """
-    today = date.today()
-    
-    # Start from yesterday, go back up to MAX_ARCHIVE_DAYS
-    for days_ago in range(1, MAX_ARCHIVE_DAYS + 1):
-        check_date = today - timedelta(days=days_ago)
-        archive_path = get_archive_path(xml_type, check_date)
-        
-        if archive_path.exists():
-            try:
-                xml_content = archive_path.read_text(encoding='utf-8')
-                logger.info(f"Using fallback {xml_type} XML from {check_date}")
-                return (xml_content, check_date)
-            except Exception as e:
-                logger.warning(f"Failed to read archive {archive_path}: {e}")
-                continue
-    
-    # No archive found
-    logger.error(
-        f"No fallback {xml_type} XML available in last {MAX_ARCHIVE_DAYS} days"
-    )
-    return None
+logger = logging.getLogger(__name__)
+
+SNAPSHOT_SCHEMA_VERSION = 1
+RETENTION_DAYS = 7
+_RECORD_SUFFIX = ".snapshot.json"
+_SAFE_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
-def get_fallback_for_date(xml_type: str, target_date: date) -> Optional[Tuple[str, date]]:
-    """
-    Get archived XML for a specific date or the closest earlier date.
-    
-    Useful for finding city-specific fallback data when a city
-    has missing/invalid data.
-    
-    Args:
-        xml_type: Either "country" or "cities"
-        target_date: The date to start looking from
-    
-    Returns:
-        Tuple of (xml_content, archive_date), or None if no archive found
-    """
-    # First try the exact date
-    archive_path = get_archive_path(xml_type, target_date)
-    if archive_path.exists():
+class SnapshotArchiveError(RuntimeError):
+    """A snapshot could not be safely stored or read."""
+
+
+class SnapshotStore:
+    """Store sealed IMS feed snapshots as independent UTF-8 JSON records."""
+
+    def __init__(self, directory: Path):
+        self.directory = Path(directory)
+
+    def save(self, snapshot: ForecastSnapshot) -> Path:
+        """Validate and atomically publish one snapshot record."""
+        validated = _validated_snapshot(snapshot)
+        if not _SAFE_ID.fullmatch(validated.snapshot_id):
+            raise SnapshotArchiveError("snapshot_id contains unsafe filename characters")
+
+        final_path = self.directory / f"{validated.snapshot_id}{_RECORD_SUFFIX}"
+        temporary_path: Path | None = None
         try:
-            xml_content = archive_path.read_text(encoding='utf-8')
-            return (xml_content, target_date)
-        except Exception as e:
-            logger.warning(f"Failed to read archive {archive_path}: {e}")
-    
-    # Then try earlier dates
-    for days_ago in range(1, MAX_ARCHIVE_DAYS + 1):
-        check_date = target_date - timedelta(days=days_ago)
-        archive_path = get_archive_path(xml_type, check_date)
-        
-        if archive_path.exists():
-            try:
-                xml_content = archive_path.read_text(encoding='utf-8')
-                logger.debug(f"Found fallback {xml_type} XML from {check_date}")
-                return (xml_content, check_date)
-            except Exception as e:
-                logger.warning(f"Failed to read archive {archive_path}: {e}")
-                continue
-    
-    return None
+            self.directory.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=self.directory,
+                prefix=f".{validated.snapshot_id}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary_file:
+                temporary_path = Path(temporary_file.name)
+                json.dump(_to_envelope(validated), temporary_file, ensure_ascii=False, indent=2)
+                temporary_file.flush()
+                os.fsync(temporary_file.fileno())
+            os.replace(temporary_path, final_path)
+        except OSError as error:
+            if temporary_path is not None:
+                try:
+                    temporary_path.unlink(missing_ok=True)
+                except OSError:
+                    logger.warning("Could not remove temporary snapshot file %s", temporary_path)
+            raise SnapshotArchiveError(
+                f"Could not save snapshot {validated.snapshot_id}: {error}"
+            ) from error
 
+        return final_path
 
-def cleanup_old_archives() -> int:
-    """
-    Remove archive files older than MAX_ARCHIVE_DAYS.
-    
-    Should be called after a successful fetch to keep the
-    archive folder from growing indefinitely.
-    
-    Returns:
-        Number of files deleted
-    """
-    if not ARCHIVE_DIR.exists():
-        return 0
-    
-    today = date.today()
-    cutoff_date = today - timedelta(days=MAX_ARCHIVE_DAYS)
-    deleted_count = 0
-    
-    # Iterate through all XML files in archive
-    for xml_file in ARCHIVE_DIR.glob("*.xml"):
+    def find_for_date(
+        self,
+        feed_type: FeedType,
+        target_date: date,
+        *,
+        as_of: datetime,
+        strict: bool = False,
+    ) -> tuple[ForecastSnapshot, ...]:
+        """Return recent snapshots that explicitly contain ``target_date``.
+
+        Manual inspection keeps the historical best-effort default. The
+        publishing application opts into ``strict`` so it cannot claim success
+        after silently losing a source record.
+        """
+        _require_aware_as_of(as_of)
+        if not isinstance(feed_type, FeedType):
+            raise SnapshotArchiveError("feed_type must be a FeedType")
+        if type(target_date) is not date:
+            raise SnapshotArchiveError("target_date must be a date")
+
+        window_start = as_of - timedelta(days=RETENTION_DAYS)
+        matches = []
         try:
-            # Parse date from filename (format: YYYY-MM-DD_type.xml)
-            filename = xml_file.stem  # e.g., "2024-12-18_cities"
-            date_str = filename.split("_")[0]  # e.g., "2024-12-18"
-            file_date = date.fromisoformat(date_str)
-            
-            # Delete if older than cutoff
-            if file_date < cutoff_date:
-                xml_file.unlink()
-                deleted_count += 1
-                logger.debug(f"Deleted old archive: {xml_file}")
-                
-        except (ValueError, IndexError) as e:
-            # Skip files that don't match expected naming pattern
-            logger.warning(f"Skipping archive file with unexpected name: {xml_file}")
-            continue
-    
-    if deleted_count > 0:
-        logger.info(f"Cleaned up {deleted_count} old archive files")
-    
-    return deleted_count
+            record_paths = self._record_paths()
+        except OSError as error:
+            raise SnapshotArchiveError(
+                f"Could not enumerate snapshot records: {error}"
+            ) from error
+        for path in record_paths:
+            try:
+                snapshot = _load_record(path)
+            except SnapshotArchiveError as error:
+                if strict:
+                    raise SnapshotArchiveError(
+                        f"Could not read snapshot record {path.name}: {error}"
+                    ) from error
+                logger.warning("Skipping corrupt snapshot record %s: %s", path, error)
+                continue
+            if snapshot.feed_type is not feed_type:
+                continue
+            if target_date not in snapshot.forecast_dates:
+                continue
+            if snapshot.fetched_at < window_start or snapshot.fetched_at > as_of:
+                continue
+            matches.append(replace(snapshot, source=SnapshotSource.ARCHIVE))
+
+        matches.sort(key=lambda item: item.snapshot_id)
+        matches.sort(key=lambda item: item.fetched_at, reverse=True)
+        return tuple(matches)
+
+    def cleanup(self, *, as_of: datetime) -> int:
+        """Remove only valid snapshot records outside the retention window."""
+        _require_aware_as_of(as_of)
+        cutoff = as_of - timedelta(days=RETENTION_DAYS)
+        deleted_count = 0
+        for path in self._record_paths():
+            try:
+                snapshot = _load_record(path)
+            except SnapshotArchiveError as error:
+                logger.warning("Skipping corrupt snapshot record %s: %s", path, error)
+                continue
+            if snapshot.fetched_at >= cutoff:
+                continue
+            try:
+                path.unlink()
+            except OSError as error:
+                raise SnapshotArchiveError(
+                    f"Could not remove expired snapshot {path}: {error}"
+                ) from error
+            deleted_count += 1
+        return deleted_count
+
+    def _record_paths(self) -> tuple[Path, ...]:
+        if not self.directory.exists():
+            return ()
+        return tuple(self.directory.glob(f"*{_RECORD_SUFFIX}"))
 
 
-def get_archive_path(xml_type: str, archive_date: date) -> Path:
-    """
-    Generate the archive file path for a given date and type.
-    
-    Args:
-        xml_type: Either "country" or "cities"
-        archive_date: The date for the archive file
-        
-    Returns:
-        Path object like: archive/2024-12-18_cities.xml
-    """
-    filename = f"{archive_date.isoformat()}_{xml_type}.xml"
-    return ARCHIVE_DIR / filename
+def _to_envelope(snapshot: ForecastSnapshot) -> dict[str, Any]:
+    return {
+        "schema_version": SNAPSHOT_SCHEMA_VERSION,
+        "snapshot_id": snapshot.snapshot_id,
+        "feed_type": snapshot.feed_type.value,
+        "source": snapshot.source.value,
+        "fetched_at": snapshot.fetched_at.isoformat(),
+        "issued_at": snapshot.issued_at.isoformat(),
+        "forecast_dates": [item.isoformat() for item in snapshot.forecast_dates],
+        "xml": snapshot.xml,
+    }
 
 
-def list_archives(xml_type: Optional[str] = None) -> list[Path]:
-    """
-    List all archive files, optionally filtered by type.
-    
-    Args:
-        xml_type: Optional filter - "country", "cities", or None for all
-    
-    Returns:
-        List of Path objects for matching archive files
-    """
-    if not ARCHIVE_DIR.exists():
-        return []
-    
-    if xml_type:
-        pattern = f"*_{xml_type}.xml"
-    else:
-        pattern = "*.xml"
-    
-    return sorted(ARCHIVE_DIR.glob(pattern), reverse=True)  # Newest first
+def _load_record(path: Path) -> ForecastSnapshot:
+    try:
+        envelope = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SnapshotArchiveError(f"record is not readable UTF-8 JSON: {error}") from error
+    if not isinstance(envelope, dict):
+        raise SnapshotArchiveError("record must contain a JSON object")
+
+    try:
+        if envelope["schema_version"] != SNAPSHOT_SCHEMA_VERSION:
+            raise SnapshotArchiveError("unsupported snapshot schema version")
+        snapshot = ForecastSnapshot(
+            snapshot_id=envelope["snapshot_id"],
+            feed_type=FeedType(envelope["feed_type"]),
+            source=SnapshotSource(envelope["source"]),
+            fetched_at=datetime.fromisoformat(envelope["fetched_at"]),
+            issued_at=datetime.fromisoformat(envelope["issued_at"]),
+            forecast_dates=tuple(
+                date.fromisoformat(item) for item in envelope["forecast_dates"]
+            ),
+            xml=envelope["xml"],
+        )
+    except SnapshotArchiveError:
+        raise
+    except (KeyError, TypeError, ValueError) as error:
+        raise SnapshotArchiveError(f"record fields are invalid: {error}") from error
+    return _validated_snapshot(snapshot)
 
 
-# Allow running this module directly for quick testing
-if __name__ == "__main__":
-    print("Testing archive system...")
-    print("-" * 50)
-    
-    # List existing archives
-    archives = list_archives()
-    print(f"Found {len(archives)} archive files:")
-    for archive in archives[:5]:  # Show first 5
-        print(f"  - {archive}")
-    
-    # Test save (with dummy content)
-    print("\nTesting save_to_archive...")
-    test_content = '<?xml version="1.0"?><test>Hello World</test>'
-    test_path = save_to_archive(test_content, "test", date.today())
-    print(f"  Saved to: {test_path}")
-    
-    # Cleanup test file
-    test_path.unlink()
-    print("  Cleaned up test file")
+def _validated_snapshot(snapshot: ForecastSnapshot) -> ForecastSnapshot:
+    if not isinstance(snapshot, ForecastSnapshot):
+        raise SnapshotArchiveError("save requires a ForecastSnapshot")
+    try:
+        expected = build_snapshot(
+            snapshot.xml,
+            snapshot.feed_type,
+            source=snapshot.source,
+            fetched_at=snapshot.fetched_at,
+        )
+    except (SnapshotValidationError, ValueError) as error:
+        raise SnapshotArchiveError(f"snapshot XML is invalid: {error}") from error
+    if expected != snapshot:
+        raise SnapshotArchiveError("snapshot facts do not match its XML and fetch time")
+    return snapshot
+
+
+def _require_aware_as_of(as_of: datetime) -> None:
+    if not isinstance(as_of, datetime) or as_of.tzinfo is None or as_of.utcoffset() is None:
+        raise SnapshotArchiveError("as_of must be timezone-aware")
