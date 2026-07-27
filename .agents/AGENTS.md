@@ -132,7 +132,8 @@ visual-optimization cycles unless the task explicitly includes them.
 - Keep `main` stable. Use short-lived topic branches.
 - Use commit messages in the form `<type>: <description>`.
 - Git LFS is required for fonts and image assets.
-- The repository currently has no declared software license. Do not claim one
-  or add one without the owner's decision.
+- The repository is licensed under Apache License 2.0 (see `LICENSE`).
+  Copyright 2026 Noam Weiss. Keep the `LICENSE` file intact; retain its
+  notices in any redistributed copies.
 - Codex cloud receives committed repository files, not this machine's ignored
   files or local tool configuration. Put durable project guidance here.

@@ -13,7 +13,8 @@
 # HTTP requests for fetching XML data from IMS
 requests>=2.31.0
 
-# Image generation and manipulation
+# Final PNG validation (confirms the rendered image is a valid 1080x1920 PNG).
+# Rendering itself is done by the browser via Playwright, not Pillow.
 Pillow>=10.0.0
 
 # XML parsing with proper encoding support

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an Apache License 2.0 `LICENSE` file and recorded the license in
+  `README.md` and `.agents/AGENTS.md`.
 - Added one thin `generate_forecast_image()` application workflow and a real
   `python -m src.main` CLI that connect exact-date source selection, parsing,
   Story context, Chromium rendering, and one local PNG.
@@ -57,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation hygiene pass: moved the superseded initial plans and the
+  refactor audit into `docs/history/` (with a README explaining they are
+  historical), moved `AGENTS.md` to `.agents/AGENTS.md` as the single source of
+  truth for agent guidance, and refreshed stale docstrings/comments in
+  `email_sender.py`, `tests/__init__.py`, and `requirements.txt`.
 - Accepted the observed official IMS morning and evening feed envelopes through
   strict product-shape checks while keeping exact-date and 15-city publication
   requirements unchanged.

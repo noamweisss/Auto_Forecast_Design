@@ -16,10 +16,15 @@ Security Note:
     Never commit the .env file! It's in .gitignore.
     Generate App Passwords at: https://myaccount.google.com/apppasswords
 
-Usage:
+Status:
+    Not implemented yet. The generator currently produces one local PNG; email
+    delivery is a separate, still-unbuilt step. `validate_email_config()` works,
+    but the send functions raise NotImplementedError.
+
+Usage (planned):
     from src.delivery.email_sender import send_forecast_email
-    
-    success = send_forecast_email("output/forecast_2024-12-18.jpg")
+
+    success = send_forecast_email("output/forecast_2026-07-24.png")
     if success:
         print("Email sent successfully!")
 """
@@ -39,19 +44,19 @@ def send_forecast_email(
     Send the forecast image via email.
     
     Args:
-        image_path: Path to the image file to attach (usually JPEG)
+        image_path: Path to the forecast PNG to attach
         recipient: Override recipient email (defaults to RECIPIENT_EMAIL env var)
         subject: Override email subject
-        
+
     Returns:
         True if email sent successfully, False otherwise
-        
+
     Raises:
         ValueError: If required environment variables are missing
         smtplib.SMTPException: If email sending fails
     """
-    # TODO: Implement in Phase 5
-    raise NotImplementedError("Will be implemented in Phase 5: Delivery")
+    # TODO: Email delivery is not built yet (see module docstring).
+    raise NotImplementedError("Email delivery is not implemented yet.")
 
 
 def _create_email_message(
@@ -74,8 +79,8 @@ def _create_email_message(
     Returns:
         MIMEMultipart email message ready to send
     """
-    # TODO: Implement in Phase 5
-    raise NotImplementedError("Will be implemented in Phase 5: Delivery")
+    # TODO: Email delivery is not built yet (see module docstring).
+    raise NotImplementedError("Email delivery is not implemented yet.")
 
 
 def _get_default_subject() -> str:

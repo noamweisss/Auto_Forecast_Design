@@ -4,7 +4,7 @@ Last reviewed: 2026-07-20
 
 This is the restart map for anyone returning to the repository after a gap. It
 separates working code from plans and placeholders. When files disagree, trust
-source code and tests first, then `AGENTS.md` and this page, then `README.md`,
+source code and tests first, then `.agents/AGENTS.md` and this page, then `README.md`,
 then historical plans and the changelog.
 
 ## The short version
@@ -63,7 +63,7 @@ Turn the working local command into a daily routine:
 
 ## Codex cloud readiness
 
-Remote work stays reproducible through a committed `AGENTS.md`,
+Remote work stays reproducible through a committed `.agents/AGENTS.md`,
 `scripts/setup_codex_cloud.sh`, `.env.example` (names only), Git LFS rules with
 setup/CI hydration checks, a render-smoke CI job that cannot silently skip
 browser tests, and ignore rules for generated forecasts, fetched XML,

@@ -33,7 +33,7 @@ blob-report/
 docs/internal/
 _experiments/
 
-# Local/legacy agent state. Shared instructions belong in AGENTS.md.
+# Local/legacy agent state. Shared instructions belong in .agents/AGENTS.md.
 .claude/
 .gemini/
 .superpowers/

@@ -154,14 +154,12 @@ browser while setup-time internet access is available.
 
 ## Repository guidance
 
-- [AGENTS.md](AGENTS.md) is the durable guide for local and cloud coding agents.
+- [AGENTS.md](.agents/AGENTS.md) is the durable guide for local and cloud coding agents.
 - [Project Status](docs/PROJECT_STATUS.md) is the current implementation map.
 - [Architecture](docs/ARCHITECTURE.md) explains the current small-layer structure and shared paths.
-- [Initial Plan](docs/00_initial_plan.md) is historical architecture context.
-- [Phase 2 Plan](docs/01_phase2_data_pipeline_plan.md) documents the data work.
-- [Folder Structure](docs/99_folder_structure.md) is a historical navigation aid.
+- [docs/history/](docs/history/) holds the superseded initial plans and refactor audit for context only.
 
-Historical plans can drift. Prefer current source code, tests, `AGENTS.md`, and
+Historical plans can drift. Prefer current source code, tests, `.agents/AGENTS.md`, and
 the project-status page when they disagree.
 
 ## Secrets, generated files, and assets
@@ -174,5 +172,6 @@ the project-status page when they disagree.
 
 ## License
 
-No software license has been selected yet. Treat the repository as unlicensed
-unless the owner adds a `LICENSE` file.
+Licensed under the [Apache License 2.0](LICENSE). You may use, modify, and
+redistribute the code under its terms; it also includes an explicit patent grant.
+Copyright 2026 Noam Weiss.
