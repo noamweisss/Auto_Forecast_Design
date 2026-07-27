@@ -45,7 +45,8 @@ def test_manual_runs_can_choose_source_date_and_whether_to_send():
     assert "forecast_date:" in text
     assert "send_email:" in text
     assert "${{ inputs.source || 'live' }}" in text
-    assert "github.event_name == 'schedule' && 'true' || inputs.send_email" in text
+    # Runs without inputs (schedule, and the temporary push trigger) always send.
+    assert "${{ inputs.send_email == 'false' && 'false' || 'true' }}" in text
 
 
 def test_scheduled_run_generates_live_data_and_emails_it():

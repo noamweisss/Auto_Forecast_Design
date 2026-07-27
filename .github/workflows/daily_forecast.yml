@@ -11,6 +11,12 @@ name: Daily forecast email
 on:
   schedule:
     - cron: "30 3,4 * * *"
+  # TEMPORARY: manual dispatch is only offered for workflows that already exist
+  # on the default branch, so this push trigger is the only way to prove the real
+  # path before merging. Delete this block once the workflow is on main.
+  push:
+    branches: [claude/docs-next-unbuilt-steps-1tuxq3]
+    paths: [".github/workflows/daily_forecast.yml", "src/**"]
   workflow_dispatch:
     inputs:
       source:
@@ -94,7 +100,9 @@ jobs:
           EMAIL_SENDER_NAME: ${{ secrets.EMAIL_SENDER_NAME || 'IMS Forecast Automation' }}
           SOURCE: ${{ inputs.source || 'live' }}
           FORECAST_DATE: ${{ inputs.forecast_date }}
-          SEND_EMAIL: ${{ github.event_name == 'schedule' && 'true' || inputs.send_email }}
+          # Send unless a manual run explicitly opted out. Scheduled and push
+          # runs carry no inputs, so they always send.
+          SEND_EMAIL: ${{ inputs.send_email == 'false' && 'false' || 'true' }}
         run: |
           set -euo pipefail
           arguments=(--source "$SOURCE")
