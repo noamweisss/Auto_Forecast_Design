@@ -1,0 +1,116 @@
+name: Daily forecast email
+
+# Generates one live IMS Story PNG and emails it to the media team every
+# morning at 06:30 Israel time.
+#
+# GitHub cron is UTC only, and Israel switches between UTC+3 (IDT, summer) and
+# UTC+2 (IST, winter). The schedule therefore fires at both 03:30 and 04:30 UTC
+# and the first step keeps only the firing that is actually 06:xx in Jerusalem.
+# A manual run skips that gate.
+
+on:
+  schedule:
+    - cron: "30 3,4 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Data source"
+        type: choice
+        options: [live, fixture]
+        default: live
+      forecast_date:
+        description: "Exact forecast date (YYYY-MM-DD); blank means today in Israel"
+        type: string
+        default: ""
+      send_email:
+        description: "Send the PNG by email"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-forecast
+  cancel-in-progress: false
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Keep only the 06:30 Israel firing
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+
+          israel_now = datetime.now(ZoneInfo("Asia/Jerusalem"))
+          manual = os.environ["EVENT_NAME"] != "schedule"
+          should_run = manual or israel_now.hour == 6
+          print(f"should_run={str(should_run).lower()}")
+          print(f"israel_time={israel_now:%Y-%m-%d %H:%M %Z}")
+          PY
+
+      - name: Report the decision
+        run: |
+          echo "Israel time: ${{ steps.gate.outputs.israel_time }}"
+          echo "Running: ${{ steps.gate.outputs.should_run }}"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.should_run == 'true'
+        with:
+          lfs: true
+
+      - name: Verify hydrated Git LFS assets
+        if: steps.gate.outputs.should_run == 'true'
+        run: git lfs fsck
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.should_run == 'true'
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.gate.outputs.should_run == 'true'
+        run: python -m pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        if: steps.gate.outputs.should_run == 'true'
+        run: python -m playwright install --with-deps chromium
+
+      - name: Generate and send the forecast Story
+        if: steps.gate.outputs.should_run == 'true'
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL || 'weissno@ims.gov.il' }}
+          EMAIL_SENDER_NAME: ${{ secrets.EMAIL_SENDER_NAME || 'IMS Forecast Automation' }}
+          SOURCE: ${{ inputs.source || 'live' }}
+          FORECAST_DATE: ${{ inputs.forecast_date }}
+          SEND_EMAIL: ${{ github.event_name == 'schedule' && 'true' || inputs.send_email }}
+        run: |
+          set -euo pipefail
+          arguments=(--source "$SOURCE")
+          if [ -n "$FORECAST_DATE" ]; then
+            arguments+=(--date "$FORECAST_DATE")
+          fi
+          if [ "$SEND_EMAIL" = "true" ]; then
+            arguments+=(--email)
+          fi
+          python -m src.main "${arguments[@]}"
+
+      - name: Keep the generated PNG as a run artifact
+        if: always() && steps.gate.outputs.should_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forecast-story
+          path: output/*.png
+          if-no-files-found: ignore
+          retention-days: 14

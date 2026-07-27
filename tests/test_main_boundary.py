@@ -8,6 +8,11 @@ import pytest
 
 from src.app_paths import AppPaths
 from src.clock import ISRAEL_TIMEZONE
+from src.delivery.email_sender import (
+    EmailConfigError,
+    EmailDeliveryError,
+    EmailDeliveryResult,
+)
 from src.settings import ConfigurationError
 import src.main as main_module
 
@@ -300,3 +305,105 @@ def test_success_text_includes_date_source_fallback_and_absolute_png(
     assert f"Data source requested: {expected_source_text}" in output
     assert "Exact-date archived values used: no" in output
     assert f"PNG: {tmp_path.resolve()}" in output
+    assert "Emailed to:" not in output
+
+
+def _install_email_boundary(monkeypatch, calls, *, settings_error=None, send_error=None):
+    email_settings = object()
+
+    def load_email_settings():
+        calls.append("email-settings")
+        if settings_error is not None:
+            raise settings_error
+        return email_settings
+
+    def send(image_path, *, settings, target_date):
+        calls.append(("email-send", image_path, settings, target_date))
+        if send_error is not None:
+            raise send_error
+        return EmailDeliveryResult(
+            recipients=("weissno@ims.gov.il",),
+            subject="תחזית יומית",
+            attachment_name=image_path.name,
+            attachment_bytes=1234,
+        )
+
+    monkeypatch.setattr(main_module, "load_email_settings", load_email_settings)
+    monkeypatch.setattr(main_module, "send_forecast_email", send)
+    return email_settings
+
+
+def test_email_flag_is_absent_by_default_and_skips_all_delivery(monkeypatch, tmp_path):
+    calls = []
+    _install_success_boundary(monkeypatch, tmp_path, calls)
+    _install_email_boundary(monkeypatch, calls)
+
+    assert main_module.main(["--source", "fixture"]) == 0
+    assert not [call for call in calls if str(call).startswith("('email")]
+    assert "email-settings" not in calls
+
+
+def test_email_configuration_is_validated_before_any_generation(monkeypatch, tmp_path):
+    calls = []
+    _install_success_boundary(monkeypatch, tmp_path, calls)
+    _install_email_boundary(
+        monkeypatch,
+        calls,
+        settings_error=EmailConfigError("EMAIL_PASSWORD must be set to a nonempty value"),
+    )
+    logger = RecordingLogger()
+    monkeypatch.setattr(main_module, "logger", logger, raising=False)
+
+    assert main_module.main(["--source", "fixture", "--email"]) == 3
+    assert logger.errors == ["EMAIL_PASSWORD must be set to a nonempty value"]
+    assert "email-settings" in calls
+    assert not any(
+        isinstance(call, tuple) and call[0] == "workflow" for call in calls
+    )
+
+
+def test_successful_email_run_reports_the_png_and_the_recipients(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    calls = []
+    _install_success_boundary(monkeypatch, tmp_path, calls)
+    email_settings = _install_email_boundary(monkeypatch, calls)
+
+    assert main_module.main(["--source", "fixture", "--email"]) == 0
+
+    send_call = calls[-1]
+    assert send_call[0] == "email-send"
+    assert send_call[1].name == "forecast_2025-12-18.png"
+    assert send_call[2] is email_settings
+    assert send_call[3] == date(2025, 12, 18)
+
+    output = capsys.readouterr().out
+    assert "PNG: " in output
+    assert "Emailed to: weissno@ims.gov.il" in output
+
+
+def test_delivery_failure_still_reports_the_saved_png_and_exits_eight(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    calls = []
+    _install_success_boundary(monkeypatch, tmp_path, calls)
+    _install_email_boundary(
+        monkeypatch,
+        calls,
+        send_error=EmailDeliveryError("SMTP delivery to smtp.gmail.com failed"),
+    )
+    logger = RecordingLogger()
+    monkeypatch.setattr(main_module, "logger", logger, raising=False)
+
+    assert main_module.main(["--source", "fixture", "--email"]) == 8
+
+    output = capsys.readouterr().out
+    assert "Forecast image created." in output
+    assert "PNG: " in output
+    assert "Emailed to:" not in output
+    assert logger.errors == ["SMTP delivery to smtp.gmail.com failed"]
+    assert logger.exceptions == []

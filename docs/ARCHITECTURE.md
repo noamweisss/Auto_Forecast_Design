@@ -9,7 +9,7 @@ main (CLI boundary)
   -> application: fixture/live candidates -> exact-date parse
   -> design: render-ready names, positions, and icon choices
   -> rendering: Jinja HTML/CSS + Playwright PNG screenshot
-  -> delivery: atomically publish one checked PNG
+  -> delivery: atomically publish one checked PNG, then optionally email it
 ```
 
 ## Paths, clock, and settings
@@ -128,10 +128,33 @@ Both modes then share the same parser, context adapter, Chromium renderer, and
 and fsyncs a temporary file beside the final path, and atomically replaces it, so
 a same-date rerun publishes one complete `forecast_YYYY-MM-DD.png` or preserves
 the previous one. `src/main.py` parses arguments before side effects, reads the
-Israel clock once, and maps configuration, source, forecast, render, and output
-failures to stable exit codes. IMS overwrites the same public files with morning
+Israel clock once, and maps configuration, source, forecast, render, output, and
+delivery failures to stable exit codes. IMS overwrites the same public files with morning
 and evening editions; the snapshot boundary recognizes only the observed
 envelopes and still requires the requested date and all 15 cities.
+
+## Email delivery and the daily schedule
+
+`src/delivery/email_sender.py` is deliberately outside the source-to-PNG
+workflow: `src/application.py` still knows nothing about mail. `main()` loads and
+validates every SMTP value *before* fetching or rendering, so a wrong credential
+costs seconds rather than a full run, and it sends only after the PNG has been
+atomically published. A delivery failure therefore leaves a usable image on disk
+and exits with code 8 instead of hiding the successful render.
+
+Configuration comes from environment variables only, and each unusable value is
+reported by its own name. The port picks the default protection (465 means
+implicit SSL, anything else STARTTLS) unless `SMTP_SECURITY` overrides it, and
+`RECIPIENT_EMAIL` accepts several comma- or semicolon-separated addresses. The
+SMTP client is an injected callable, exactly like the fetcher's `request_get`, so
+the automated suite verifies the ordered STARTTLS/login/send conversation without
+opening a socket.
+
+`.github/workflows/daily_forecast.yml` runs the live command with `--email`.
+GitHub cron is UTC only while Israel alternates between UTC+3 and UTC+2, so the
+schedule fires at 03:30 and 04:30 UTC and the first step keeps only the firing
+where `Asia/Jerusalem` reads 06:xx. Manual runs skip that gate and can choose the
+source, an exact date, and whether to send.
 
 ## Import safety
 

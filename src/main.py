@@ -20,6 +20,14 @@ from src.application import (
     generate_forecast_image,
 )
 from src.clock import SystemClock
+from src.delivery.email_sender import (
+    EmailConfigError,
+    EmailDeliveryError,
+    EmailDeliveryResult,
+    EmailSettings,
+    load_email_settings,
+    send_forecast_email,
+)
 from src.rendering.template_renderer import TemplateRenderer
 from src.settings import ConfigurationError, load_settings
 from src.utils.logger import configure_logging
@@ -33,6 +41,7 @@ _EXIT_BY_STAGE = {
     RunStage.RENDER: 6,
     RunStage.OUTPUT: 7,
 }
+_EMAIL_FAILURE_EXIT = 8
 
 
 def _iso_date(value: str) -> date:
@@ -71,6 +80,14 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "relative path is resolved from the repository root."
         ),
     )
+    parser.add_argument(
+        "--email",
+        action="store_true",
+        help=(
+            "Also send the saved PNG to RECIPIENT_EMAIL using the SMTP settings "
+            "in the environment. Configuration is validated before any work starts."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -92,6 +109,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             else now.date()
         )
         output_directory = _resolve_output_directory(arguments.output_dir, paths)
+        # Credentials are checked before fetching or rendering, so a
+        # misconfigured scheduled run fails in seconds instead of minutes.
+        email_settings = load_email_settings() if arguments.email else None
 
         renderer = TemplateRenderer()
         result = generate_forecast_image(
@@ -105,7 +125,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             now=now,
             renderer=renderer,
         )
-    except ConfigurationError as error:
+    except (ConfigurationError, EmailConfigError) as error:
         logger.error("%s", error)
         return 3
     except ForecastRunError as error:
@@ -115,8 +135,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.exception("Unexpected forecast generation error")
         return 1
 
-    _print_success(result)
+    delivery: EmailDeliveryResult | None = None
+    if email_settings is not None:
+        try:
+            delivery = _send_email(result, email_settings)
+        except EmailDeliveryError as error:
+            # The PNG is already published, so report it before the failure.
+            _print_success(result, None)
+            logger.error("%s", error)
+            return _EMAIL_FAILURE_EXIT
+        except Exception:
+            _print_success(result, None)
+            logger.exception("Unexpected email delivery error")
+            return 1
+
+    _print_success(result, delivery)
     return 0
+
+
+def _send_email(
+    result: GenerationResult,
+    email_settings: EmailSettings,
+) -> EmailDeliveryResult:
+    return send_forecast_email(
+        result.output_path,
+        settings=email_settings,
+        target_date=result.target_date,
+    )
 
 
 def _resolve_output_directory(value: Path | None, paths: AppPaths) -> Path:
@@ -127,7 +172,10 @@ def _resolve_output_directory(value: Path | None, paths: AppPaths) -> Path:
     return (paths.root / value).resolve()
 
 
-def _print_success(result: GenerationResult) -> None:
+def _print_success(
+    result: GenerationResult,
+    delivery: EmailDeliveryResult | None = None,
+) -> None:
     source_text = {
         SourceMode.LIVE: "live IMS",
         SourceMode.FIXTURE: "local fixture",
@@ -142,6 +190,8 @@ def _print_success(result: GenerationResult) -> None:
     print(f"Data source requested: {source_text}")
     print(f"Exact-date archived values used: {fallback_text}")
     print(f"PNG: {result.output_path}")
+    if delivery is not None:
+        print(f"Emailed to: {', '.join(delivery.recipients)}")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added real SMTP delivery in `src/delivery/email_sender.py`: validated
+  environment settings, port-derived STARTTLS or implicit SSL, a UTF-8 Hebrew
+  message naming the forecast date, the PNG attachment, and readable
+  configuration and delivery errors.
+- Added a `--email` flag to `python -m src.main` that validates credentials
+  before any fetching or rendering, sends only after the PNG is published, and
+  exits 8 on a delivery failure while still reporting the saved file.
+- Added `.github/workflows/daily_forecast.yml`, which generates the live Story
+  and emails it at 06:30 Israel time. The schedule fires at 03:30 and 04:30 UTC
+  and an `Asia/Jerusalem` gate keeps only the 06:xx firing, so summer and winter
+  offsets both work; manual runs skip the gate and choose source, date, and send.
+- Added offline contracts for email configuration, message construction, the
+  ordered SMTP conversation, failure translation, the `--email` command boundary,
+  and the scheduled workflow file. No test opens a socket.
 - Added an Apache License 2.0 `LICENSE` file and recorded the license in
   `README.md` and `.agents/AGENTS.md`.
 - Added one thin `generate_forecast_image()` application workflow and a real
@@ -59,6 +73,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Marked email delivery and daily automation as implemented in `README.md`,
+  `docs/PROJECT_STATUS.md`, `docs/ARCHITECTURE.md`, and `.agents/AGENTS.md`, and
+  recorded the remaining manual step: add the two repository secrets, merge the
+  workflow to the default branch, and confirm the first real send.
+- Expanded `.env.example` with the optional `SMTP_USERNAME`, `SMTP_SECURITY`, and
+  `EMAIL_SENDER_NAME` variables and a default recipient.
 - Documentation hygiene pass: moved the superseded initial plans and the
   refactor audit into `docs/history/` (with a README explaining they are
   historical), moved `AGENTS.md` to `.agents/AGENTS.md` as the single source of

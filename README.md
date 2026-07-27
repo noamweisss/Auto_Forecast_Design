@@ -41,11 +41,14 @@ and debuggability matter more than clever abstractions.
   source modes, exact-date fallback provenance, stable exits, and one local PNG.
 - A browser-marked vertical test from committed IMS XML fixtures through the
   complete application and atomic saver.
+- SMTP delivery of the finished PNG through `python -m src.main --email`.
+- A daily GitHub Actions workflow that generates and emails the Story at 06:30
+  Israel time.
 
 ## What is unfinished
 
-- Email delivery is not implemented.
-- No daily GitHub Actions workflow exists.
+- The daily workflow has never run against a real mailbox; it needs the
+  `EMAIL_ADDRESS` and `EMAIL_PASSWORD` repository secrets before its first send.
 - The first live output is workable, but future visual refinements remain a
   design choice rather than a blocker for the local generator.
 
@@ -119,7 +122,45 @@ python -m src.main --source fixture --output-dir test-results/forecast-demo
 ```
 
 The command never selects a nearby date. A successful run writes one absolute
-`forecast_YYYY-MM-DD.png` path; email and scheduling are not part of this command.
+`forecast_YYYY-MM-DD.png` path.
+
+Add `--email` to also send that PNG to `RECIPIENT_EMAIL`:
+
+```bash
+python -m src.main --source live --email
+```
+
+The SMTP configuration is validated before any fetching or rendering, so a
+missing credential fails in seconds with exit code 3. A send failure after the
+PNG was already saved exits with code 8 and still reports the saved file.
+
+## Daily email workflow
+
+`.github/workflows/daily_forecast.yml` runs `python -m src.main --source live
+--email` every morning at 06:30 Israel time and keeps the PNG as a run artifact
+for 14 days.
+
+GitHub cron is UTC only and Israel switches between UTC+3 and UTC+2, so the
+schedule fires at both 03:30 and 04:30 UTC; the first step drops whichever
+firing is not 06:xx in Jerusalem. Scheduled workflows only run from the default
+branch, so this file has to be on `main` before the first delivery.
+
+Add these repository secrets under Settings, Secrets and variables, Actions:
+
+| Secret | Required | Default if unset |
+| --- | --- | --- |
+| `EMAIL_ADDRESS` | Yes | none, the run fails |
+| `EMAIL_PASSWORD` | Yes | none, the run fails |
+| `RECIPIENT_EMAIL` | No | `weissno@ims.gov.il` |
+| `SMTP_SERVER` | No | `smtp.gmail.com` |
+| `SMTP_PORT` | No | `587` |
+| `EMAIL_SENDER_NAME` | No | `IMS Forecast Automation` |
+
+For Gmail, `EMAIL_PASSWORD` must be an app password from
+https://myaccount.google.com/apppasswords, not the account password.
+
+Run it by hand from the Actions tab first. Manual runs skip the clock gate and
+let you choose the source, an exact date, and whether to send the email.
 
 Renderer work can create the ignored frozen-reference diagnostics with:
 
@@ -146,8 +187,8 @@ In the Codex environment settings:
 
 3. Leave agent internet access off unless a task specifically needs live IMS or
    Figma access. The existing automated tests should not require the network.
-4. Add real credentials as environment settings only when email delivery is
-   implemented. Never commit them.
+4. Add real SMTP credentials as environment settings only when a task actually
+   sends mail. Never commit them.
 
 The setup script installs Python dependencies and the Playwright Chromium
 browser while setup-time internet access is available.
@@ -164,7 +205,8 @@ the project-status page when they disagree.
 
 ## Secrets, generated files, and assets
 
-- Copy `.env.example` to `.env` for future local email configuration.
+- Copy `.env.example` to `.env` for local email configuration. The daily
+  workflow reads the same variable names from repository secrets.
 - `.env`, generated images, downloaded XML, logs, caches, and private internal
   notes are intentionally ignored by Git.
 - Fonts and image assets are stored through Git LFS. Install Git LFS before

@@ -34,8 +34,11 @@ may be stale.
   samples; live mode uses fetched IMS data and never shifts the requested date.
   Both morning and evening feed envelopes are validated without changing the
   requested forecast date.
-- Email delivery still contains stubs.
-- No production GitHub Actions workflow exists yet.
+- `src/delivery/email_sender.py` sends the finished PNG over SMTP; `main --email`
+  validates the credentials before any fetching or rendering.
+- `.github/workflows/daily_forecast.yml` generates and emails the Story at 06:30
+  Israel time. It has never run against a real mailbox, and GitHub only schedules
+  workflows from the default branch.
 - Figma-derived tokens and local design assets are committed, so ordinary work
   must not require live Figma access.
 
@@ -82,7 +85,9 @@ python -m src.main --source fixture
 
 The fixture command uses local sample inputs, not today's forecast. The default
 command requests real live IMS data for the Israel run-start date. Both commands
-write only one `forecast_YYYY-MM-DD.png`; email and scheduling are separate work.
+write one `forecast_YYYY-MM-DD.png` and send nothing. Add `--email` to also
+deliver it using the SMTP variables in the environment; never do that from an
+automated test.
 
 ## Project map
 
@@ -90,7 +95,7 @@ write only one `forecast_YYYY-MM-DD.png`; email and scheduling are separate work
 src/data/       Fetch, parse, model, and archive IMS XML
 src/design/     Validated, template-ready Story context and asset addresses
 src/rendering/  Jinja2 template plus Playwright screenshot pipeline
-src/delivery/   Image saving and future email delivery
+src/delivery/   Atomic image saving and SMTP email delivery
 src/application.py  Thin source-to-PNG orchestration
 src/utils/      Logging and date helpers
 config/         City, weather-code, and Figma-derived design data
