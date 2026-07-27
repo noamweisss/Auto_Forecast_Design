@@ -98,7 +98,10 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL || 'weissno@ims.gov.il' }}
           EMAIL_SENDER_NAME: ${{ secrets.EMAIL_SENDER_NAME || 'IMS Forecast Automation' }}
-          SOURCE: ${{ inputs.source || 'live' }}
+          # TEMPORARY: the push trigger runs fixture data so the render and email
+          # path can be proven without depending on IMS reachability. Scheduled
+          # runs stay live. Delete with the push trigger before merging.
+          SOURCE: ${{ inputs.source || (github.event_name == 'push' && 'fixture') || 'live' }}
           FORECAST_DATE: ${{ inputs.forecast_date }}
           # Send unless a manual run explicitly opted out. Scheduled and push
           # runs carry no inputs, so they always send.
